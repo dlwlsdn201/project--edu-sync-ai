@@ -1,0 +1,21 @@
+"너는 20년차 풀스택 아키텍트이자 React Native 전문가야. 첨부된 PRD.md를 기반으로 'EduSync AI' 프로젝트의 초기 환경 세팅과 베이스 코드를 생성해줘.
+
+작업 요구사항:
+
+Initialize: npx create-expo-app을 사용하여 TypeScript 기반의 Expo 프로젝트를 생성해. (Template: tabs 또는 blank)
+
+Library Install: supabase-js, nativewind, lucide-react-native, react-navigation, async-storage 등 필수 라이브러리를 설치해.
+
+Directory Structure: src/ 폴더 아래 components, hooks, screens, services (Supabase Client 포함), utils, types 구조를 잡아줘.
+
+Environment: .env.example 파일을 만들고 Supabase URL과 Anon Key 변수를 정의해.
+
+Base Code: >    - Supabase Client 설정 (src/services/supabase.ts)
+
+공통 레이아웃 및 테마 설정 (NativeWind/Tailwind)
+
+카카오 로그인 API 연동을 위한 Auth Provider 스켈레톤 작성
+
+Next Step: 모든 세팅이 끝나면 내가 바로 npx expo start를 할 수 있도록 가이드를 줘.
+
+모든 코드는 Clean Code 원칙을 준수하고, 5년차 개발자가 리뷰하기에 깔끔한 구조여야 해."

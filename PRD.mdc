@@ -1,0 +1,58 @@
+이 문서는 AI 리포트의 , 항목을 작성할 때 핵심 소스가 됩니다. 
+
+📄 [PRD] EduSync AI: 실시간 맞춤형 학습 진단 솔루션
+
+1. 기획 배경 및 목표 
+
+
+대상 사용자: 실시간 학생 관리에 어려움을 느끼는 교강사, 질문하기 주저하는 중/고등학생 
+
+
+문제점: 대규모 강의 환경에서 발생하는 개별 학습 격차와 즉각적인 피드백 부재 
+
+해결책: AI 기반 마이크로 퀴즈와 소크라테스식 문답 피드백을 통해 학습 데이터 분석 및 실시간 보완
+
+2. 핵심 기능 (MVP Scope) 
+
+2.1 교사용 (Web/App)
+AI 퀴즈 자동 생성: 수업 자료를 기반으로 핵심 개념 퀴즈 생성
+
+실시간 학습 현황 대시보드: 학생별 정답률 및 취약 개념 실시간 시각화 (Supabase Realtime 활용)
+
+2.2 학생용 (Mobile App)
+카카오 간편 로그인: 복잡한 가입 절차 없이 즉각적인 학습 참여
+
+AI 튜터 피드백: 오답 발생 시 정답을 바로 알려주지 않고 힌트를 제공하여 사고 유도
+
+학습 리포트: 본인의 취약점 분석 및 보완 학습 제안
+
+3. 기술 스택 및 아키텍처 
+
+Frontend: React Native (Expo SDK 50+), NativeWind (Tailwind CSS)
+
+Backend/DB: Supabase (PostgreSQL, Auth, Realtime)
+
+AI Model: GPT-4o 또는 Claude 3.5 Sonnet (퀴즈 생성 및 피드백용)
+
+Infrastructure: Vercel (Web Preview), Expo EAS (Mobile Build)
+
+4. 데이터 모델링 (Supabase)
+profiles: 사용자 구분 (Teacher/Student) 및 카카오 연동 정보
+
+classrooms: 수업 그룹 및 입장 코드 관리
+
+quiz_sets: AI 생성 문제 및 관련 개념 데이터
+
+student_logs: 실시간 응답 기록 및 AI 피드백 히스토리
+
+5. 로드맵 (7일 완성 플랜)
+Day 1-2: 환경 세팅, DB 설계, 카카오 로그인 연동
+
+Day 3-4: AI 퀴즈 생성 로직 및 학생용 UI 구현
+
+Day 5-6: 실시간 대시보드(교사용) 및 피드백 시스템 고도화
+
+
+Day 7: 최종 테스트, 배포(Vercel/Expo Go), AI 리포트 작성---
+alwaysApply: true
+---
