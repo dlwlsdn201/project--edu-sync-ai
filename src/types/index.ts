@@ -43,3 +43,38 @@ export interface StudentLog {
   ai_feedback?: string;
   created_at: string;
 }
+
+// ── 대시보드 / 리포트용 집계 타입 ───────────────────────────────────────────
+
+export interface StudentResult {
+  student_id: string;
+  display_name: string;
+  correct: number;
+  total: number;
+  accuracy: number; // 0~100
+}
+
+export interface ClassroomStats {
+  total_students: number;
+  answered_students: number;
+  avg_accuracy: number;
+  student_results: StudentResult[];
+  weak_concepts: string[];   // 평균 정답률 60% 미만 concept_tag
+  strong_concepts: string[]; // 평균 정답률 80% 이상 concept_tag
+}
+
+export interface ConceptStat {
+  concept_tag: string;
+  correct: number;
+  total: number;
+  accuracy: number; // 0~100
+}
+
+export interface MyLog {
+  quiz_set_id: string;
+  quiz_title: string;
+  correct: number;
+  total: number;
+  accuracy: number;
+  created_at: string;
+}

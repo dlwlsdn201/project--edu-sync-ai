@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { PlusCircle, BookOpen } from 'lucide-react-native';
+import { PlusCircle, BookOpen, BarChart2 } from 'lucide-react-native';
 
 export default function TeacherLayout() {
   return (
@@ -23,6 +23,13 @@ export default function TeacherLayout() {
         options={{
           title: '퀴즈 목록',
           tabBarIcon: ({ color, size }) => <BookOpen size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="dashboard"
+        options={{
+          title: '대시보드',
+          tabBarIcon: ({ color, size }) => <BarChart2 size={size} color={color} />,
         }}
       />
     </Tabs>

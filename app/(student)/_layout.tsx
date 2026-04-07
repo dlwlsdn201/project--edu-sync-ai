@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { BookOpen, Plus } from 'lucide-react-native';
+import { BookOpen, Plus, TrendingUp } from 'lucide-react-native';
 
 export default function StudentLayout() {
   return (
@@ -23,6 +23,13 @@ export default function StudentLayout() {
         options={{
           title: '수업 참여',
           tabBarIcon: ({ color, size }) => <Plus size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="report"
+        options={{
+          title: '리포트',
+          tabBarIcon: ({ color, size }) => <TrendingUp size={size} color={color} />,
         }}
       />
       <Tabs.Screen
