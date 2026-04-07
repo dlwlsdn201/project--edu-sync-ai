@@ -3,7 +3,7 @@ export type UserRole = 'teacher' | 'student';
 export interface Profile {
   id: string;
   kakao_id: string;
-  role: UserRole;
+  role: UserRole | null;
   display_name: string;
   avatar_url?: string;
   created_at: string;

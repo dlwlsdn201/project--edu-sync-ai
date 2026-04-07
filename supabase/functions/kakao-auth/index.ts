@@ -146,7 +146,6 @@ async function exchangeCodeForSession(
     await admin.from('profiles').insert({
       id: userId,
       kakao_id: kakaoId,
-      role: 'student',
       display_name: displayName,
       avatar_url: avatarUrl,
     });

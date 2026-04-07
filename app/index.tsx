@@ -10,10 +10,14 @@ export default function Index() {
   if (isLoading) return <LoadingSpinner fullScreen />;
   if (!isAuthenticated) return <LoginScreen />;
 
-  // 역할에 따라 대시보드로 이동
-  if (profile?.role === 'teacher') {
-    return <Redirect href="/(teacher)/dashboard" />;
+  // 역할 미설정 신규 유저 → 역할 선택 화면
+  if (profile?.role === null || profile?.role === undefined) {
+    return <Redirect href="/(auth)/role-select" />;
   }
 
-  return <Redirect href="/(student)/quiz" />;
+  if (profile.role === 'teacher') {
+    return <Redirect href="/(teacher)/quiz-create" />;
+  }
+
+  return <Redirect href="/(student)/quiz-list" />;
 }
