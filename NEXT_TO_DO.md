@@ -1,7 +1,5 @@
 # EduSync AI — 다음 작업 목록
 
-Day 3-4 구현 완료 후 남은 작업입니다.
-
 ---
 
 ## 🔧 즉시 처리 필요 (환경 설정)
@@ -31,61 +29,76 @@ EXPO_PUBLIC_GEMINI_API_KEY=your_gemini_api_key
 supabase functions deploy kakao-auth --project-ref {프로젝트_ref}
 ```
 
----
+### 4. Vercel & GitHub Secrets 설정
 
-## 📋 Day 5-6 작업
+GitHub 저장소 → Settings → Secrets and variables → Actions에 추가:
 
-### 교사용 — 실시간 대시보드
+| Secret | 값 |
+|--------|---|
+| `EXPO_PUBLIC_SUPABASE_URL` | Supabase 프로젝트 URL |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
+| `EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY` | 카카오 앱 키 |
+| `EXPO_PUBLIC_GEMINI_API_KEY` | Gemini API 키 |
+| `VERCEL_TOKEN` | Vercel → Account Settings → Tokens |
+| `VERCEL_ORG_ID` | `vercel env ls` 또는 Vercel 대시보드 |
+| `VERCEL_PROJECT_ID` | Vercel 프로젝트 설정에서 확인 |
 
-- [ ] `app/(teacher)/dashboard.tsx` — 학생별 정답률 시각화
-- [ ] `src/hooks/useRealtimeLogs.ts` — Supabase Realtime 구독
+### 5. EAS 프로젝트 연결
 
-```typescript
-supabase
-  .channel('student_logs')
-  .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'student_logs' }, handler)
-  .subscribe()
+```bash
+npm install -g eas-cli
+eas login
+eas build:configure   # app.json에 EAS 프로젝트 ID 자동 추가
 ```
 
-- [ ] 취약 개념 태그(`concept_tag`) 기반 집계 차트
-- [ ] `app/(teacher)/_layout.tsx`에 Dashboard 탭 추가
+---
 
-### AI 피드백 고도화
+## ✅ 완료된 작업
 
-- [ ] Supabase Edge Function `ai-feedback` 생성
-  - 오답 데이터 + 문제 내용 → Gemini에 소크라테스식 힌트 생성 요청
-  - 생성된 피드백을 `student_logs.ai_feedback`에 업데이트
-  - 현재는 클라이언트에서 직접 호출 → Edge Function으로 이관하면 보안 강화
+### Day 1-2
+- [x] Expo + Supabase + NativeWind 초기 세팅
+- [x] 카카오 로그인 + Edge Function
+- [x] DB 스키마 (profiles, classrooms, quiz_sets, student_logs)
 
-### 학생용 — 학습 리포트
+### Day 3-4
+- [x] 역할 선택 화면 (`app/(auth)/role-select.tsx`)
+- [x] 교사: AI 퀴즈 생성 + 목록 (`app/(teacher)/`)
+- [x] 학생: 수업 참여 + 퀴즈 응시 + AI 힌트 (`app/(student)/`)
+- [x] Gemini 2.0 Flash API 연동 (`src/api/ai.ts`)
 
-- [ ] `app/(student)/report.tsx` — 본인 취약점 분석 화면
-- [ ] `src/hooks/useReport.ts` — `student_logs` 집계 쿼리
-- [ ] `app/(student)/_layout.tsx`에 Report 탭 추가
+### Day 5-6
+- [x] 교사: 실시간 대시보드 (`app/(teacher)/dashboard.tsx`)
+- [x] 학생: 학습 리포트 (`app/(student)/report.tsx`)
+- [x] Supabase Realtime 구독 (`src/hooks/useRealtimeLogs.ts`)
+
+### Day 7
+- [x] EAS Build 설정 (`eas.json`) — preview + production
+- [x] Vercel 웹 배포 설정 (`vercel.json`)
+- [x] GitHub Actions CI/CD (`.github/workflows/deploy-vercel.yml`)
+- [x] E2E 테스트 체크리스트 (`docs/e2e-test-checklist.md`)
+- [ ] **실제 E2E 테스트 실행** → `docs/e2e-test-checklist.md` 참고
+- [ ] **EAS 빌드 실행** → `npm run build:preview`
+- [ ] **AI 리포트 작성** (본인 작성)
 
 ---
 
-## 📋 Day 7 작업
-
-- [ ] 전체 플로우 E2E 테스트
-  - 카카오 로그인 → 역할 선택 → 교사: 퀴즈 생성 → 학생: 입장 코드 참여 → 퀴즈 응시 → 결과 확인
-- [ ] EAS Build 설정 (`eas.json`) 및 프로덕션 빌드
-- [ ] Vercel 웹 프리뷰 배포 (웹 버전 확인)
-- [ ] AI 리포트 작성
-
----
-
-## 📁 Day 3-4에서 완성된 파일
+## 📁 전체 주요 파일
 
 | 파일 | 역할 |
 |------|------|
-| `app/(auth)/role-select.tsx` | 역할 선택 화면 |
+| `src/api/supabase.ts` | Supabase 클라이언트 |
+| `src/api/auth.ts` | 카카오 로그인 |
+| `src/api/ai.ts` | Gemini 퀴즈 생성 + 힌트 |
+| `src/api/quiz.ts` | 퀴즈 CRUD |
+| `src/api/logs.ts` | 대시보드·리포트 집계 |
+| `src/store/AuthContext.tsx` | 전역 인증 상태 |
+| `app/(auth)/role-select.tsx` | 역할 선택 |
 | `app/(teacher)/quiz-create.tsx` | AI 퀴즈 생성 |
-| `app/(teacher)/quiz-library.tsx` | 퀴즈 목록 |
-| `app/(student)/join.tsx` | 수업 참여 (입장 코드) |
-| `app/(student)/quiz-list.tsx` | 퀴즈 목록 |
-| `app/(student)/quiz.tsx` | 퀴즈 응시 + AI 힌트 |
-| `src/api/ai.ts` | Gemini 2.0 Flash API |
-| `src/api/quiz.ts` | Supabase 퀴즈 CRUD |
-| `src/hooks/useQuizGeneration.ts` | 퀴즈 생성 훅 |
-| `src/hooks/useQuiz.ts` | 퀴즈 조회 훅 |
+| `app/(teacher)/dashboard.tsx` | 실시간 대시보드 |
+| `app/(student)/quiz.tsx` | 퀴즈 응시 |
+| `app/(student)/report.tsx` | 학습 리포트 |
+| `supabase/functions/kakao-auth/` | 카카오 인증 Edge Function |
+| `eas.json` | EAS Build 설정 |
+| `vercel.json` | Vercel 웹 배포 설정 |
+| `.github/workflows/deploy-vercel.yml` | CI/CD |
+| `docs/e2e-test-checklist.md` | E2E 테스트 체크리스트 |
