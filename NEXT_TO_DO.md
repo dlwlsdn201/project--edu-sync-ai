@@ -76,6 +76,7 @@ eas build:configure   # app.json에 EAS 프로젝트 ID 자동 추가
 - [x] Vercel 웹 배포 설정 (`vercel.json`)
 - [x] GitHub Actions CI/CD (`.github/workflows/deploy-vercel.yml`)
 - [x] E2E 테스트 체크리스트 (`docs/e2e-test-checklist.md`)
+- [ ] 카카오 로그인 연동 완료하기 (*현재 카카오톡 로그인 버튼 클릭하면 KOE101 에러 코드 발생)
 - [ ] **실제 E2E 테스트 실행** → `docs/e2e-test-checklist.md` 참고
 - [ ] **EAS 빌드 실행** → `npm run build:preview`
 - [ ] **AI 리포트 작성** (본인 작성)
