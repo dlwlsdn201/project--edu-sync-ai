@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { PlusCircle, BookOpen, BarChart2 } from 'lucide-react-native';
+import { PlusCircle, BookOpen, BarChart2, UserCircle } from 'lucide-react-native';
 
 export default function TeacherLayout() {
   return (
@@ -30,6 +30,13 @@ export default function TeacherLayout() {
         options={{
           title: '대시보드',
           tabBarIcon: ({ color, size }) => <BarChart2 size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: '프로필',
+          tabBarIcon: ({ color, size }) => <UserCircle size={size} color={color} />,
         }}
       />
     </Tabs>
