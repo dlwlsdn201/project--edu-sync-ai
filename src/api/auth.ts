@@ -14,7 +14,7 @@ export async function signInWithKakao(): Promise<Profile | null> {
   // 웹: 현재 페이지를 카카오 로그인으로 리다이렉트 (팝업 불필요)
   // state 파라미터로 콜백 URL을 Edge Function에 전달
   if (Platform.OS === 'web') {
-    const webCallbackUrl = window.location.origin + '/auth/callback';
+    const webCallbackUrl = window.location.origin;
     const kakaoAuthUrl =
       `https://kauth.kakao.com/oauth/authorize` +
       `?client_id=${KAKAO_REST_API_KEY}` +

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 import { supabase } from '../api/supabase';
 import { getCurrentProfile, signInWithKakao, signOut } from '../api/auth';
 import type { Profile } from '../types';
@@ -19,6 +20,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // 웹: 카카오 OAuth 콜백 시 URL에 포함된 토큰 처리
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const accessToken = params.get('access_token');
+      const refreshToken = params.get('refresh_token');
+      if (accessToken && refreshToken) {
+        supabase.auth
+          .setSession({ access_token: accessToken, refresh_token: refreshToken })
+          .then(() => {
+            window.history.replaceState({}, '', '/');
+          });
+        // onAuthStateChange의 SIGNED_IN 이벤트가 프로필을 로드함
+        setIsLoading(false);
+        return;
+      }
+    }
+
     getCurrentProfile().then((p) => {
       setProfile(p);
       setIsLoading(false);
