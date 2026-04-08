@@ -22,13 +22,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event) => {
-      if (event === 'SIGNED_IN') {
-        const p = await getCurrentProfile();
-        setProfile(p);
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+        if (session) {
+          const p = await getCurrentProfile();
+          setProfile(p);
+        }
         setIsLoading(false);
       } else if (event === 'SIGNED_OUT') {
         setProfile(null);
+        setIsLoading(false);
       }
     });
 
@@ -38,20 +41,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const accessToken = params.get('access_token');
       const refreshToken = params.get('refresh_token');
       if (accessToken && refreshToken) {
-        // setSession이 onAuthStateChange SIGNED_IN을 트리거 → 프로필 로드
         supabase.auth
           .setSession({ access_token: accessToken, refresh_token: refreshToken })
-          .then(() => {
+          .then(async () => {
             window.history.replaceState({}, '', '/');
-          });
+            const p = await getCurrentProfile();
+            setProfile(p);
+            setIsLoading(false);
+          })
+          .catch(() => setIsLoading(false));
         return () => subscription.unsubscribe();
       }
     }
-
-    getCurrentProfile().then((p) => {
-      setProfile(p);
-      setIsLoading(false);
-    });
 
     return () => subscription.unsubscribe();
   }, []);
