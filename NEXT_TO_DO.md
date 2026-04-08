@@ -2,34 +2,26 @@
 
 ---
 
-## 🔧 즉시 처리 필요 (환경 설정)
+## 🔧 내일 할 일 (Day 8)
 
-### 1. Supabase DB 마이그레이션 실행
+### 1. 카카오 개발자 콘솔 설정 확인 (KOE101 해결)
 
-Supabase Dashboard → SQL Editor에서 실행:
+카카오 로그인 버튼 클릭 시 KOE101 에러 발생 중. 아래 항목 순서대로 확인:
 
-```sql
-ALTER TABLE profiles ALTER COLUMN role DROP DEFAULT;
-ALTER TABLE profiles ALTER COLUMN role DROP NOT NULL;
-```
+1. [카카오 Developers](https://developers.kakao.com) → 내 애플리케이션 → **카카오 로그인 활성화** ON 확인
+2. **Redirect URI** 등록 확인:
+   ```
+   https://fkmfmdgcjpiihrkkeqghi.supabase.co/functions/v1/kakao-auth
+   ```
+3. **앱 키** → REST API 키가 `.env`의 `EXPO_PUBLIC_KAKAO_REST_API_KEY` 값과 일치하는지 확인
+4. **플랫폼** → iOS(`com.edusync.ai`) / Android(`com.edusync.ai`) 등록 확인
 
-### 2. Google Gemini API 키 발급
+> ⚠️ 카카오 로그인 테스트는 Expo Go 불가. 반드시 개발 빌드로 실행:
+> ```bash
+> npx expo run:ios
+> ```
 
-[Google AI Studio](https://aistudio.google.com)에서 무료 API 키 발급 후 `.env`에 추가:
-
-```env
-EXPO_PUBLIC_GEMINI_API_KEY=your_gemini_api_key
-```
-
-### 3. Supabase Edge Function 재배포
-
-`kakao-auth` Edge Function이 수정됐습니다 (신규 유저 role 초기값 제거).
-
-```bash
-supabase functions deploy kakao-auth --project-ref {프로젝트_ref}
-```
-
-### 4. Vercel & GitHub Secrets 설정
+### 2. Vercel & GitHub Secrets 설정
 
 GitHub 저장소 → Settings → Secrets and variables → Actions에 추가:
 
@@ -37,18 +29,28 @@ GitHub 저장소 → Settings → Secrets and variables → Actions에 추가:
 |--------|---|
 | `EXPO_PUBLIC_SUPABASE_URL` | Supabase 프로젝트 URL |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
-| `EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY` | 카카오 앱 키 |
+| `EXPO_PUBLIC_KAKAO_REST_API_KEY` | 카카오 REST API 키 |
 | `EXPO_PUBLIC_GEMINI_API_KEY` | Gemini API 키 |
 | `VERCEL_TOKEN` | Vercel → Account Settings → Tokens |
 | `VERCEL_ORG_ID` | `vercel env ls` 또는 Vercel 대시보드 |
 | `VERCEL_PROJECT_ID` | Vercel 프로젝트 설정에서 확인 |
 
-### 5. EAS 프로젝트 연결
+### 3. EAS 프로젝트 연결
 
 ```bash
 npm install -g eas-cli
 eas login
 eas build:configure   # app.json에 EAS 프로젝트 ID 자동 추가
+```
+
+### 4. E2E 테스트 실행
+
+카카오 로그인 연동 완료 후 → `docs/e2e-test-checklist.md` 참고하여 전체 플로우 검증
+
+### 5. EAS 빌드 실행
+
+```bash
+npm run build:preview
 ```
 
 ---
@@ -76,10 +78,12 @@ eas build:configure   # app.json에 EAS 프로젝트 ID 자동 추가
 - [x] Vercel 웹 배포 설정 (`vercel.json`)
 - [x] GitHub Actions CI/CD (`.github/workflows/deploy-vercel.yml`)
 - [x] E2E 테스트 체크리스트 (`docs/e2e-test-checklist.md`)
-- [ ] 카카오 로그인 연동 완료하기 (*현재 카카오톡 로그인 버튼 클릭하면 KOE101 에러 코드 발생)
-- [ ] **실제 E2E 테스트 실행** → `docs/e2e-test-checklist.md` 참고
-- [ ] **EAS 빌드 실행** → `npm run build:preview`
-- [ ] **AI 리포트 작성** (본인 작성)
+- [x] 로그인 버튼 UI 스타일 보완 (`Button.tsx` className override 버그 수정)
+- [x] 카카오 로그인 후 무한 스피너 해결 (`AuthContext.tsx`)
+
+### Day 8 (오늘)
+- [x] `react-native-worklets` 누락으로 인한 Bundling 에러 수정
+- [x] `Button` 컴포넌트 `className` prop이 내부 스타일을 덮어쓰는 버그 수정
 
 ---
 
