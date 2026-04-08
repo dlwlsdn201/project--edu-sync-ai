@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 
 const KAKAO_REST_API_KEY = Deno.env.get('KAKAO_REST_API_KEY')!;
 const KAKAO_CLIENT_SECRET_KEY = Deno.env.get('KAKAO_CLIENT_SECRET_KEY')!;
@@ -161,13 +161,23 @@ async function exchangeCodeForSession(
   }
 
   // Step 4: Supabase 세션 발급
-  const { data: session, error: sessionErr } =
-    await admin.auth.admin.createSession({ user_id: userId });
+  const email = `kakao_${kakaoId}@edusync.ai`;
 
+  const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
+    type: 'magiclink',
+    email,
+  });
+  if (linkError) throw new Error(`매직링크 생성 실패: ${linkError.message}`);
+
+  const { data: sessionData, error: sessionErr } = await admin.auth.verifyOtp({
+    email,
+    token: linkData.properties.hashed_token,
+    type: 'magiclink',
+  });
   if (sessionErr) throw new Error(`세션 발급 실패: ${sessionErr.message}`);
 
   return {
-    accessToken: session.session.access_token,
-    refreshToken: session.session.refresh_token,
+    accessToken: sessionData.session!.access_token,
+    refreshToken: sessionData.session!.refresh_token,
   };
 }
