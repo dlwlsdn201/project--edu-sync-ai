@@ -170,8 +170,7 @@ async function exchangeCodeForSession(
   if (linkError) throw new Error(`매직링크 생성 실패: ${linkError.message}`);
 
   const { data: sessionData, error: sessionErr } = await admin.auth.verifyOtp({
-    email,
-    token: linkData.properties.hashed_token,
+    token_hash: linkData.properties.hashed_token,
     type: 'magiclink',
   });
   if (sessionErr) throw new Error(`세션 발급 실패: ${sessionErr.message}`);
