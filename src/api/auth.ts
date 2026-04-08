@@ -1,4 +1,5 @@
 import * as WebBrowser from 'expo-web-browser';
+import { Platform } from 'react-native';
 import { supabase } from './supabase';
 import type { Profile } from '../types';
 
@@ -7,32 +8,30 @@ WebBrowser.maybeCompleteAuthSession();
 const KAKAO_REST_API_KEY = process.env.EXPO_PUBLIC_KAKAO_REST_API_KEY!;
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL!;
 
-/**
- * 카카오 OAuth 로그인 (HTTPS redirect → Edge Function → 앱 deep link)
- *
- * 흐름:
- * 1. redirect_uri = Edge Function HTTPS URL (카카오 콘솔에 등록된 URL)
- * 2. 브라우저 열기 → 카카오 로그인
- * 3. 카카오가 Edge Function으로 인증코드 전송 (GET ?code=xxx)
- * 4. Edge Function: 토큰 교환 → 유저 upsert → edusync://auth/callback?tokens 로 리다이렉트
- * 5. openAuthSessionAsync가 edusync:// 감지 → 브라우저 닫기 → 토큰 추출 → 세션 설정
- *
- * ⚠️  테스트 환경:
- *     Expo Go는 edusync:// 커스텀 스킴을 지원하지 않습니다.
- *     카카오 로그인 테스트는 개발 빌드를 사용하세요:
- *       npx expo run:ios   또는   npx expo run:android
- */
 export async function signInWithKakao(): Promise<Profile | null> {
-  // Edge Function URL을 redirect_uri로 사용 (카카오 콘솔에 등록한 HTTPS URL)
   const redirectUri = `${SUPABASE_URL}/functions/v1/kakao-auth`;
 
+  // 웹: 현재 페이지를 카카오 로그인으로 리다이렉트 (팝업 불필요)
+  // state 파라미터로 콜백 URL을 Edge Function에 전달
+  if (Platform.OS === 'web') {
+    const webCallbackUrl = window.location.origin + '/auth/callback';
+    const kakaoAuthUrl =
+      `https://kauth.kakao.com/oauth/authorize` +
+      `?client_id=${KAKAO_REST_API_KEY}` +
+      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+      `&response_type=code` +
+      `&state=${encodeURIComponent(webCallbackUrl)}`;
+    window.location.href = kakaoAuthUrl;
+    return null;
+  }
+
+  // 네이티브: Edge Function → edusync:// 딥링크
   const kakaoAuthUrl =
     `https://kauth.kakao.com/oauth/authorize` +
     `?client_id=${KAKAO_REST_API_KEY}` +
     `&redirect_uri=${encodeURIComponent(redirectUri)}` +
     `&response_type=code`;
 
-  // edusync:// 가 감지되면 브라우저를 자동으로 닫고 result.url 반환
   const result = await WebBrowser.openAuthSessionAsync(
     kakaoAuthUrl,
     'edusync://',
@@ -42,7 +41,6 @@ export async function signInWithKakao(): Promise<Profile | null> {
     return null;
   }
 
-  // Edge Function이 반환한 edusync://auth/callback?access_token=...&refresh_token=...
   const tokens = extractTokensFromDeepLink(result.url);
   if (!tokens) {
     console.error('[Auth] 딥링크에서 토큰 추출 실패:', result.url);

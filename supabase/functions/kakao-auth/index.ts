@@ -7,6 +7,12 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const FUNCTION_URL = `${SUPABASE_URL}/functions/v1/kakao-auth`;
 const APP_DEEP_LINK = 'edusync://auth/callback';
 
+function resolveCallbackUrl(state: string | null): string {
+  // state가 HTTPS URL이면 웹 콜백, 아니면 네이티브 딥링크
+  if (state && state.startsWith('https://')) return state;
+  return APP_DEEP_LINK;
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -24,9 +30,11 @@ Deno.serve(async (req: Request) => {
   if (req.method === 'GET') {
     const code = url.searchParams.get('code');
     const error = url.searchParams.get('error');
+    const state = url.searchParams.get('state');
+    const callbackUrl = resolveCallbackUrl(state);
 
     if (error || !code) {
-      return Response.redirect(`${APP_DEEP_LINK}?error=${error ?? 'no_code'}`);
+      return Response.redirect(`${callbackUrl}?error=${error ?? 'no_code'}`);
     }
 
     try {
@@ -35,16 +43,15 @@ Deno.serve(async (req: Request) => {
         FUNCTION_URL,
       );
 
-      // 앱으로 딥링크 리다이렉트 (openAuthSessionAsync가 감지)
-      const deepLink =
-        `${APP_DEEP_LINK}` +
+      const redirectTarget =
+        `${callbackUrl}` +
         `?access_token=${encodeURIComponent(accessToken)}` +
         `&refresh_token=${encodeURIComponent(refreshToken)}`;
 
-      return Response.redirect(deepLink, 302);
+      return Response.redirect(redirectTarget, 302);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'unknown';
-      return Response.redirect(`${APP_DEEP_LINK}?error=${encodeURIComponent(message)}`);
+      return Response.redirect(`${callbackUrl}?error=${encodeURIComponent(message)}`);
     }
   }
 
