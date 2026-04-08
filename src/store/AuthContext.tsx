@@ -20,37 +20,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // 웹: 카카오 OAuth 콜백 시 URL에 포함된 토큰 처리
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const accessToken = params.get('access_token');
-      const refreshToken = params.get('refresh_token');
-      if (accessToken && refreshToken) {
-        supabase.auth
-          .setSession({ access_token: accessToken, refresh_token: refreshToken })
-          .then(() => {
-            window.history.replaceState({}, '', '/');
-          });
-        // onAuthStateChange의 SIGNED_IN 이벤트가 프로필을 로드함
-        setIsLoading(false);
-        return;
-      }
-    }
-
-    getCurrentProfile().then((p) => {
-      setProfile(p);
-      setIsLoading(false);
-    });
-
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event) => {
       if (event === 'SIGNED_IN') {
         const p = await getCurrentProfile();
         setProfile(p);
+        setIsLoading(false);
       } else if (event === 'SIGNED_OUT') {
         setProfile(null);
       }
+    });
+
+    // 웹: 카카오 OAuth 콜백 시 URL에 포함된 토큰 처리
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const accessToken = params.get('access_token');
+      const refreshToken = params.get('refresh_token');
+      if (accessToken && refreshToken) {
+        // setSession이 onAuthStateChange SIGNED_IN을 트리거 → 프로필 로드
+        supabase.auth
+          .setSession({ access_token: accessToken, refresh_token: refreshToken })
+          .then(() => {
+            window.history.replaceState({}, '', '/');
+          });
+        return () => subscription.unsubscribe();
+      }
+    }
+
+    getCurrentProfile().then((p) => {
+      setProfile(p);
+      setIsLoading(false);
     });
 
     return () => subscription.unsubscribe();
