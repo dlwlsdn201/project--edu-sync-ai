@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const KAKAO_REST_API_KEY = Deno.env.get('KAKAO_REST_API_KEY')!;
+const KAKAO_CLIENT_SECRET_KEY = Deno.env.get('KAKAO_CLIENT_SECRET_KEY')!;
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
@@ -8,8 +9,8 @@ const FUNCTION_URL = `${SUPABASE_URL}/functions/v1/kakao-auth`;
 const APP_DEEP_LINK = 'edusync://auth/callback';
 
 function resolveCallbackUrl(state: string | null): string {
-  // state가 HTTPS URL이면 웹 콜백, 아니면 네이티브 딥링크
-  if (state && state.startsWith('https://')) return state;
+  // state가 HTTP(S) URL이면 웹 콜백, 아니면 네이티브 딥링크
+  if (state && (state.startsWith('https://') || state.startsWith('http://'))) return state;
   return APP_DEEP_LINK;
 }
 
@@ -93,6 +94,7 @@ async function exchangeCodeForSession(
     body: new URLSearchParams({
       grant_type: 'authorization_code',
       client_id: KAKAO_REST_API_KEY,
+      client_secret: KAKAO_CLIENT_SECRET_KEY,
       redirect_uri: redirectUri,
       code,
     }),
