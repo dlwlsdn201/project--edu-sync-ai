@@ -15,6 +15,7 @@ import { getOrCreateDefaultClassroom } from '../../src/api/quiz';
 import { Button } from '../../src/components/common/Button';
 import { LoadingSpinner } from '../../src/components/common/LoadingSpinner';
 import { ScreenContent } from '../../src/components/layout/ScreenContent';
+import { showAppAlert } from '../../src/utils/appAlert';
 import type { Classroom } from '../../src/types';
 
 export default function QuizCreateScreen() {
@@ -29,20 +30,20 @@ export default function QuizCreateScreen() {
     if (!profile?.id) return;
     getOrCreateDefaultClassroom(profile.id)
       .then(setClassroom)
-      .catch((err) => Alert.alert('오류', err.message));
+      .catch((err) => showAppAlert('오류', err.message));
   }, [profile?.id]);
 
   const handleGenerate = () => {
     if (!classroom) {
-      Alert.alert('오류', '수업 정보를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+      showAppAlert('오류', '수업 정보를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
       return;
     }
     if (!title.trim()) {
-      Alert.alert('알림', '퀴즈 제목을 입력해주세요.');
+      showAppAlert('알림', '퀴즈 제목을 입력해주세요.');
       return;
     }
     if (content.trim().length < 50) {
-      Alert.alert('알림', '수업 자료를 50자 이상 입력해주세요.');
+      showAppAlert('알림', '수업 자료를 50자 이상 입력해주세요.');
       return;
     }
 
@@ -50,14 +51,22 @@ export default function QuizCreateScreen() {
       { title: title.trim(), text: content.trim() },
       {
         onSuccess: () => {
-          Alert.alert('완료', '퀴즈가 생성되었습니다!', [
-            { text: '확인', onPress: () => router.push('/(teacher)/quiz-library') },
-          ]);
           setTitle('');
           setContent('');
+          if (Platform.OS === 'web') {
+            window.alert('완료\n\n퀴즈가 생성되었습니다!');
+            router.push('/(teacher)/quiz-library');
+          } else {
+            Alert.alert('완료', '퀴즈가 생성되었습니다!', [
+              { text: '확인', onPress: () => router.push('/(teacher)/quiz-library') },
+            ]);
+          }
         },
         onError: (err) => {
-          Alert.alert('생성 실패', err instanceof Error ? err.message : '오류가 발생했습니다.');
+          showAppAlert(
+            '생성 실패',
+            err instanceof Error ? err.message : '오류가 발생했습니다.',
+          );
         },
       },
     );
@@ -69,7 +78,11 @@ export default function QuizCreateScreen() {
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView className="flex-1" contentContainerStyle={{ paddingTop: 60, paddingBottom: 40 }}>
+        <ScrollView
+          className="flex-1"
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingTop: 60, paddingBottom: 40 }}
+        >
         <Text className="text-2xl font-bold text-gray-900 mb-1">AI 퀴즈 생성</Text>
         <Text className="text-sm text-gray-500 mb-6">
           수업 자료를 입력하면 AI가 자동으로 퀴즈를 만들어드립니다.
