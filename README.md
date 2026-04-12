@@ -9,7 +9,7 @@
 ## 주요 기능
 
 ### 교사
-- **AI 퀴즈 생성** — 수업 자료 텍스트 입력 → Gemini 2.0 Flash가 4지선다 5문제 자동 생성
+- **AI 퀴즈 생성** — 수업 자료 텍스트 입력 → Gemini 2.5 Flash가 4지선다 5문제 자동 생성
 - **입장 코드** — 수업별 6자리 코드를 학생에게 공유
 - **실시간 대시보드** — 학생 응시 현황·정답률을 Supabase Realtime으로 즉시 반영
 - **개념 분석** — 취약/강점 개념 태그 자동 집계
@@ -40,7 +40,7 @@
 | UI | React Native + NativeWind v4 (Tailwind CSS) |
 | 백엔드 | Supabase (Auth · DB · Realtime · Edge Functions) |
 | 상태 관리 | TanStack Query v5 + Context API |
-| AI | Google Gemini 2.0 Flash API |
+| AI | Google Gemini 2.5 Flash API (`EXPO_PUBLIC_GEMINI_MODEL`로 변경 가능) |
 | 인증 | 카카오 OAuth (Supabase Edge Function 경유) |
 | 배포 | EAS Build (모바일) · Vercel + GitHub Actions (웹) |
 
