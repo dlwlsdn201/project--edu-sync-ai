@@ -3,7 +3,7 @@ import type { Question } from '../types';
 const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 // 기본: 2.5-flash. 429가 잦으면 EXPO_PUBLIC_GEMINI_MODEL=gemini-2.5-flash-lite 권장(할당량이 별도일 수 있음).
 const GEMINI_MODEL = process.env.EXPO_PUBLIC_GEMINI_MODEL ?? 'gemini-2.5-flash';
-/** 주 모델이 429로 끝까지 실패하면 한 번 시도 (무료 티어에서 쿼터가 분리된 경우가 있음) */
+/** 주 모델이 429·503 등으로 성공하지 못하면 시도 (무료 티어에서 쿼터·가용성이 분리된 경우가 있음) */
 const GEMINI_FALLBACK_MODEL =
   process.env.EXPO_PUBLIC_GEMINI_FALLBACK_MODEL ?? 'gemini-2.5-flash-lite';
 
@@ -11,9 +11,15 @@ function geminiUrl(modelId: string): string {
   return `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${GEMINI_API_KEY}`;
 }
 
-/** 503·429 는 일시적 과부하/속도 제한 → 재시도 */
+/** 503·429 는 일시적 과부하/속도 제한 → 재시도(단, 503은 폴백 우선) */
 const GEMINI_RETRY_STATUSES = new Set([503, 429]);
+/** 429: 분당·일 한도 → 동일 모델에서 여러 번 백오프 */
 const GEMINI_MAX_ATTEMPTS_PER_MODEL = 5;
+/**
+ * 503: 모델/게이트웨이 과부하 → 동일 모델에서 길게 재시도하기보다
+ * `EXPO_PUBLIC_GEMINI_FALLBACK_MODEL` 로 빨리 넘기는 편이 성공률이 높음.
+ */
+const GEMINI_503_MAX_ATTEMPTS_PER_MODEL = 1;
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -56,6 +62,10 @@ function toUserFacingGeminiError(status: number, body: string): Error {
   return new Error(`Gemini API 오류: ${status} ${body}`);
 }
 
+/**
+ * Gemini `generateContent` 호출. 503은 동일 모델에서 길게 재시도하지 않고
+ * `GEMINI_FALLBACK_MODEL` 로 넘기고, 429는 동일 모델에서 백오프 재시도 후 폴백.
+ */
 async function callGemini(prompt: string): Promise<string> {
   const body = JSON.stringify({
     contents: [{ parts: [{ text: prompt }] }],
@@ -90,19 +100,23 @@ async function callGemini(prompt: string): Promise<string> {
       lastErrorText = errorText;
       lastStatus = status;
 
-      const willRetry =
-        GEMINI_RETRY_STATUSES.has(status) &&
-        attempt < GEMINI_MAX_ATTEMPTS_PER_MODEL - 1;
+      // 503·429 별로 동일 모델에서의 재시도 상한을 다르게 둠 (503 → 빠른 폴백)
+      const maxAttemptsOnThisModel =
+        status === 503 ? GEMINI_503_MAX_ATTEMPTS_PER_MODEL : GEMINI_MAX_ATTEMPTS_PER_MODEL;
+      const willRetrySameModel =
+        GEMINI_RETRY_STATUSES.has(status) && attempt < maxAttemptsOnThisModel - 1;
 
-      if (willRetry) {
+      if (willRetrySameModel) {
         await sleep(backoffMsForRetry(status, attempt, errorText));
         continue;
       }
 
-      // 재시도 불가(400 등)이거나 이 모델에서 마지막 시도까지 실패 → 다음 폴백 모델
+      // 재시도 불가(400 등)이면 즉시 throw
       if (!GEMINI_RETRY_STATUSES.has(status)) {
         throw toUserFacingGeminiError(status, errorText);
       }
+
+      // 503·429 이지만 이 모델에서 더 이상 재시도하지 않음 → 폴백 모델로 전환
       break;
     }
   }
