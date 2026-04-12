@@ -98,17 +98,26 @@ export async function joinClassroom(
   return classroom as Classroom;
 }
 
+/** 학생 퀴즈 탭 — 수업 참여 여부와 목록을 함께 반환(UI에서 입장 전/후 구분용) */
+export interface StudentQuizListResult {
+  quizSets: QuizSet[];
+  /** classroom_members 에 한 건이라도 있으면 true(입장 코드로 최소 한 수업 참여) */
+  hasClassroomMembership: boolean;
+}
+
 /**
- * 학생이 참여한 수업의 퀴즈 목록을 조회합니다.
+ * 학생이 참여한 수업의 퀴즈 목록 + 수업 참여 여부를 조회합니다.
  */
-export async function getStudentQuizSets(studentId: string): Promise<QuizSet[]> {
+export async function getStudentQuizContext(studentId: string): Promise<StudentQuizListResult> {
   const { data: memberships, error: memberErr } = await supabase
     .from('classroom_members')
     .select('classroom_id')
     .eq('student_id', studentId);
 
   if (memberErr) throw new Error(`수업 목록 조회 실패: ${memberErr.message}`);
-  if (!memberships || memberships.length === 0) return [];
+  if (!memberships || memberships.length === 0) {
+    return { quizSets: [], hasClassroomMembership: false };
+  }
 
   const classroomIds = memberships.map((m) => m.classroom_id);
 
@@ -119,7 +128,18 @@ export async function getStudentQuizSets(studentId: string): Promise<QuizSet[]> 
     .order('created_at', { ascending: false });
 
   if (error) throw new Error(`퀴즈 목록 조회 실패: ${error.message}`);
-  return (data ?? []) as QuizSet[];
+  return {
+    quizSets: (data ?? []) as QuizSet[],
+    hasClassroomMembership: true,
+  };
+}
+
+/**
+ * 학생이 참여한 수업의 퀴즈 목록만 필요할 때(getStudentQuizContext 위임).
+ */
+export async function getStudentQuizSets(studentId: string): Promise<QuizSet[]> {
+  const { quizSets } = await getStudentQuizContext(studentId);
+  return quizSets;
 }
 
 /**

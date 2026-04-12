@@ -1,12 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
-import { getStudentQuizSets, getQuizSetsByClassroom } from '../api/quiz';
+import { getStudentQuizContext, getQuizSetsByClassroom } from '../api/quiz';
 import { supabase } from '../api/supabase';
 import type { QuizSet } from '../types';
 
+/**
+ * 학생 퀴즈 목록 + 입장 코드로 수업에 참여했는지(`hasClassroomMembership`) 동시 조회.
+ */
 export function useStudentQuizSets(studentId: string) {
   return useQuery({
     queryKey: ['studentQuizSets', studentId],
-    queryFn: () => getStudentQuizSets(studentId),
+    queryFn: () => getStudentQuizContext(studentId),
     enabled: !!studentId,
   });
 }

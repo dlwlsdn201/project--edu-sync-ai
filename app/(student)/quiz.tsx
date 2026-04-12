@@ -190,11 +190,19 @@ export default function QuizScreen() {
 
       {phase === 'wrong' && (
         <View className="bg-error/10 rounded-xl px-4 py-3 mb-4">
-          <View className="flex-row items-center mb-2">
+          <View className="flex-row items-center mb-3">
             <XCircle size={20} color="#EF4444" />
             <Text className="text-error font-semibold ml-2">오답입니다.</Text>
           </View>
-          <Button label="힌트 보기" onPress={handleGetHint} variant="outline" />
+          {/* 힌트는 선택 — 힌트 없이도 다음 문제로 진행 가능 */}
+          <View className="gap-2">
+            <Button label="힌트 보기" onPress={handleGetHint} variant="outline" className="!w-full" />
+            <Button
+              label={currentIndex + 1 >= questions.length ? '결과 보기' : '다음 문제'}
+              onPress={handleNext}
+              className="!w-full"
+            />
+          </View>
         </View>
       )}
 

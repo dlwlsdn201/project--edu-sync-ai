@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, FlatList, Pressable, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { router } from 'expo-router';
-import { BookOpen, ChevronRight, CheckCircle2, FileQuestion } from 'lucide-react-native';
+import { BookOpen, ChevronRight, CheckCircle2, FileQuestion, KeyRound } from 'lucide-react-native';
 import { useAuth } from '../../src/hooks/useAuth';
 import { useStudentQuizSets } from '../../src/hooks/useQuiz';
 import { joinClassroom } from '../../src/api/quiz';
@@ -21,8 +21,9 @@ export default function QuizListScreen() {
   const { profile } = useAuth();
   const studentId = profile?.id ?? '';
   const queryClient = useQueryClient();
-  const { data: quizSets, isLoading, refetch } = useStudentQuizSets(studentId);
-  const quizCount = quizSets?.length ?? 0;
+  const { data, isLoading, refetch } = useStudentQuizSets(studentId);
+  const quizSets = data?.quizSets ?? [];
+  const hasClassroomMembership = data?.hasClassroomMembership ?? false;
 
   const [code, setCode] = useState('');
   const [isJoining, setIsJoining] = useState(false);
@@ -60,7 +61,7 @@ export default function QuizListScreen() {
     }
   }, [code, queryClient, refetch, studentId]);
 
-  if (isLoading && !quizSets) return <LoadingSpinner fullScreen />;
+  if (isLoading && data === undefined) return <LoadingSpinner fullScreen />;
 
   return (
     <ScreenContent>
@@ -71,7 +72,7 @@ export default function QuizListScreen() {
       >
         <FlatList
           className="flex-1"
-          data={quizSets ?? []}
+          data={quizSets}
           keyExtractor={(item) => item.id}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingBottom: 24, flexGrow: 1, gap: 10, paddingTop: 4 }}
@@ -86,19 +87,10 @@ export default function QuizListScreen() {
               isJoining={isJoining}
               joinSuccess={joinSuccess}
               joinError={joinError}
-              hasQuizzes={quizCount > 0}
             />
           }
           ListEmptyComponent={
-            <View className="items-center justify-center py-10 px-2">
-              <FileQuestion size={48} color="#D1D5DB" />
-              <Text className="text-base text-gray-400 mt-3 text-center">
-                아직 표시할 퀴즈가 없습니다.
-              </Text>
-              <Text className="text-sm text-gray-400 mt-1 text-center">
-                위에 입장 코드를 입력하고 참여하면 목록이 나타납니다.
-              </Text>
-            </View>
+            <QuizListEmptyState hasClassroomMembership={hasClassroomMembership} />
           }
           renderItem={({ item }) => <QuizListItem quiz={item} />}
         />
@@ -114,7 +106,6 @@ interface QuizListHeaderProps {
   isJoining: boolean;
   joinSuccess: string | null;
   joinError: string | null;
-  hasQuizzes: boolean;
 }
 
 /**
@@ -127,7 +118,6 @@ function QuizListHeader({
   isJoining,
   joinSuccess,
   joinError,
-  hasQuizzes,
 }: QuizListHeaderProps) {
   return (
     <View className="pb-2">
@@ -179,9 +169,46 @@ function QuizListHeader({
         ) : null}
       </View>
 
-      {hasQuizzes ? (
-        <Text className="text-base font-semibold text-gray-900 mb-2 px-0.5">내 퀴즈</Text>
-      ) : null}
+      <Text className="text-base font-semibold text-gray-900 mb-2 px-0.5">내 퀴즈</Text>
+    </View>
+  );
+}
+
+interface QuizListEmptyStateProps {
+  /** 입장 코드로 최소 한 수업에 참여한 경우 true */
+  hasClassroomMembership: boolean;
+}
+
+/**
+ * 수업 미참여 시 · 참여했으나 퀴즈 0개 시 메시지를 구분합니다.
+ */
+function QuizListEmptyState({ hasClassroomMembership }: QuizListEmptyStateProps) {
+  if (!hasClassroomMembership) {
+    return (
+      <View
+        className="rounded-2xl border border-dashed border-gray-200 bg-gray-50/80 px-5 py-8 items-center"
+        accessibilityRole="text"
+      >
+        <KeyRound size={40} color="#9CA3AF" />
+        <Text className="text-base text-gray-600 mt-4 text-center font-medium leading-6">
+          입장 코드를 먼저 입력한 후,{'\n'}참여하기 버튼을 눌러주세요
+        </Text>
+        <Text className="text-xs text-gray-400 mt-3 text-center leading-5">
+          수업에 참여하면 교사가 만든 퀴즈가 여기에 표시됩니다.
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <View className="items-center justify-center py-8 px-2">
+      <FileQuestion size={48} color="#D1D5DB" />
+      <Text className="text-base text-gray-500 mt-3 text-center font-medium">
+        아직 표시할 퀴즈가 없습니다
+      </Text>
+      <Text className="text-sm text-gray-400 mt-1 text-center leading-5">
+        교사가 해당 수업에 퀴즈를 만들면 목록에 나타납니다.
+      </Text>
     </View>
   );
 }
