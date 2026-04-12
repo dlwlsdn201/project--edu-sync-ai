@@ -1,21 +1,25 @@
 import React from 'react';
 import { View, Text, Alert, Platform } from 'react-native';
+import { router } from 'expo-router';
 import { useAuth } from '../../src/hooks/useAuth';
 import { Button } from '../../src/components/common/Button';
 
 export default function StudentProfileScreen() {
   const { profile, signOut } = useAuth();
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     if (Platform.OS === 'web') {
       if (!window.confirm('로그아웃 하시겠습니까?')) return;
-      signOut();
     } else {
-      Alert.alert('로그아웃', '로그아웃 하시겠습니까?', [
-        { text: '취소', style: 'cancel' },
-        { text: '로그아웃', style: 'destructive', onPress: signOut },
-      ]);
+      await new Promise<void>((resolve) => {
+        Alert.alert('로그아웃', '로그아웃 하시겠습니까?', [
+          { text: '취소', style: 'cancel' },
+          { text: '로그아웃', style: 'destructive', onPress: () => resolve() },
+        ]);
+      });
     }
+    await signOut();
+    router.replace('/');
   };
 
   return (
