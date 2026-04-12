@@ -5,24 +5,62 @@ const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 const GEMINI_MODEL = process.env.EXPO_PUBLIC_GEMINI_MODEL ?? 'gemini-2.5-flash';
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
 
+/** 503·429 는 일시적이므로 자동 재시도 */
+const GEMINI_RETRY_STATUSES = new Set([503, 429]);
+const GEMINI_MAX_ATTEMPTS = 4;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function toUserFacingGeminiError(status: number, body: string): Error {
+  if (status === 503) {
+    return new Error(
+      'Gemini 서버가 일시적으로 혼잡합니다. 자동으로 몇 번 더 시도했어요. 잠시 후 다시 눌러 주세요.',
+    );
+  }
+  if (status === 429) {
+    return new Error(
+      'Gemini 요청 한도에 걸렸습니다. 잠시 후 다시 시도하거나 Google AI Studio에서 할당량·결제를 확인해 주세요.',
+    );
+  }
+  return new Error(`Gemini API 오류: ${status} ${body}`);
+}
+
 async function callGemini(prompt: string): Promise<string> {
-  const res = await fetch(GEMINI_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
-    }),
+  const body = JSON.stringify({
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
   });
 
-  if (!res.ok) {
+  for (let attempt = 0; attempt < GEMINI_MAX_ATTEMPTS; attempt++) {
+    const res = await fetch(GEMINI_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const text: string = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+      return text;
+    }
+
     const errorText = await res.text();
-    throw new Error(`Gemini API 오류: ${res.status} ${errorText}`);
+    const status = res.status;
+    const willRetry =
+      GEMINI_RETRY_STATUSES.has(status) && attempt < GEMINI_MAX_ATTEMPTS - 1;
+
+    if (willRetry) {
+      // 1s → 2s → 4s
+      await sleep(1000 * 2 ** attempt);
+      continue;
+    }
+
+    throw toUserFacingGeminiError(status, errorText);
   }
 
-  const data = await res.json();
-  const text: string = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-  return text;
+  throw new Error('Gemini 요청이 반복적으로 실패했습니다. 잠시 후 다시 시도해 주세요.');
 }
 
 /**
