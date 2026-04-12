@@ -14,6 +14,7 @@ import { useQuizGeneration } from '../../src/hooks/useQuizGeneration';
 import { getOrCreateDefaultClassroom } from '../../src/api/quiz';
 import { Button } from '../../src/components/common/Button';
 import { LoadingSpinner } from '../../src/components/common/LoadingSpinner';
+import { ScreenContent } from '../../src/components/layout/ScreenContent';
 import type { Classroom } from '../../src/types';
 
 export default function QuizCreateScreen() {
@@ -63,11 +64,12 @@ export default function QuizCreateScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      className="flex-1 bg-white"
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView className="flex-1 px-5" contentContainerStyle={{ paddingTop: 60, paddingBottom: 40 }}>
+    <ScreenContent outerClassName="bg-white">
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView className="flex-1" contentContainerStyle={{ paddingTop: 60, paddingBottom: 40 }}>
         <Text className="text-2xl font-bold text-gray-900 mb-1">AI 퀴즈 생성</Text>
         <Text className="text-sm text-gray-500 mb-6">
           수업 자료를 입력하면 AI가 자동으로 퀴즈를 만들어드립니다.
@@ -114,7 +116,8 @@ export default function QuizCreateScreen() {
         ) : (
           <Button label="AI로 퀴즈 생성" onPress={handleGenerate} />
         )}
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </ScreenContent>
   );
 }

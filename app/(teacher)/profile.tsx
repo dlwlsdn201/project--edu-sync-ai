@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { useAuth } from '../../src/hooks/useAuth';
 import { Button } from '../../src/components/common/Button';
 import { supabase } from '../../src/api/supabase';
+import { ScreenContent } from '../../src/components/layout/ScreenContent';
 
 export default function TeacherProfileScreen() {
   const { profile, signOut, refreshProfile } = useAuth();
@@ -66,7 +67,7 @@ export default function TeacherProfileScreen() {
   };
 
   return (
-    <View className="flex-1 bg-gray-50 px-5 pt-16">
+    <ScreenContent innerClassName="pt-16">
       <Text className="text-2xl font-bold text-gray-900 mb-8">프로필</Text>
 
       <View className="bg-white rounded-2xl p-5 border border-gray-100 mb-4">
@@ -83,6 +84,6 @@ export default function TeacherProfileScreen() {
         <Button label="역할 변경" variant="outline" onPress={handleChangeRole} isLoading={isChangingRole} />
         <Button label="로그아웃" onPress={handleSignOut} />
       </View>
-    </View>
+    </ScreenContent>
   );
 }

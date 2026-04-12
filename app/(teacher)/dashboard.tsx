@@ -7,6 +7,7 @@ import { useRealtimeLogs } from '../../src/hooks/useRealtimeLogs';
 import { getOrCreateDefaultClassroom } from '../../src/api/quiz';
 import { getClassroomStats } from '../../src/api/logs';
 import { LoadingSpinner } from '../../src/components/common/LoadingSpinner';
+import { ScreenContent } from '../../src/components/layout/ScreenContent';
 import type { Classroom, ClassroomStats, StudentResult } from '../../src/types';
 
 export default function DashboardScreen() {
@@ -31,24 +32,27 @@ export default function DashboardScreen() {
   if (isLoading || !classroom) return <LoadingSpinner fullScreen />;
 
   return (
-    <View className="flex-1 bg-gray-50">
-      <View className="bg-white px-5 pt-14 pb-4 border-b border-gray-100">
-        <Text className="text-2xl font-bold text-gray-900">실시간 현황</Text>
-        <Text className="text-sm text-gray-500 mt-0.5">{classroom.name} · 입장코드 <Text className="font-bold text-primary">{classroom.entry_code}</Text></Text>
-      </View>
+    <ScreenContent>
+      <View className="flex-1">
+        <View className="bg-white pt-14 pb-4 border-b border-gray-100 -mx-5 px-5">
+          <Text className="text-2xl font-bold text-gray-900">실시간 현황</Text>
+          <Text className="text-sm text-gray-500 mt-0.5">{classroom.name} · 입장코드 <Text className="font-bold text-primary">{classroom.entry_code}</Text></Text>
+        </View>
 
-      <FlatList
-        data={stats?.student_results ?? []}
-        keyExtractor={(item) => item.student_id}
-        renderItem={({ item }) => <StudentCard item={item} />}
-        ListHeaderComponent={<Header stats={stats} />}
-        ListFooterComponent={<ConceptSummary stats={stats} />}
-        ListEmptyComponent={<EmptyState />}
-        contentContainerStyle={{ padding: 16, gap: 10 }}
-        numColumns={2}
-        columnWrapperStyle={{ gap: 10 }}
-      />
-    </View>
+        <FlatList
+          className="flex-1"
+          data={stats?.student_results ?? []}
+          keyExtractor={(item) => item.student_id}
+          renderItem={({ item }) => <StudentCard item={item} />}
+          ListHeaderComponent={<Header stats={stats} />}
+          ListFooterComponent={<ConceptSummary stats={stats} />}
+          ListEmptyComponent={<EmptyState />}
+          contentContainerStyle={{ paddingVertical: 16, gap: 10 }}
+          numColumns={2}
+          columnWrapperStyle={{ gap: 10 }}
+        />
+      </View>
+    </ScreenContent>
   );
 }
 

@@ -11,6 +11,7 @@ import { router } from 'expo-router';
 import { useAuth } from '../../src/hooks/useAuth';
 import { joinClassroom } from '../../src/api/quiz';
 import { Button } from '../../src/components/common/Button';
+import { ScreenContent } from '../../src/components/layout/ScreenContent';
 import { useQueryClient } from '@tanstack/react-query';
 
 export default function JoinScreen() {
@@ -42,11 +43,12 @@ export default function JoinScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      className="flex-1 bg-white px-6"
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <View className="flex-1 justify-center">
+    <ScreenContent outerClassName="bg-white" innerClassName="justify-center">
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View className="flex-1 justify-center">
         <Text className="text-2xl font-bold text-gray-900 mb-2">수업 참여</Text>
         <Text className="text-sm text-gray-500 mb-8">
           교사에게 받은 입장 코드를 입력하세요.
@@ -64,7 +66,8 @@ export default function JoinScreen() {
         />
 
         <Button label="참여하기" onPress={handleJoin} isLoading={isLoading} />
-      </View>
-    </KeyboardAvoidingView>
+        </View>
+      </KeyboardAvoidingView>
+    </ScreenContent>
   );
 }

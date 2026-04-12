@@ -4,6 +4,7 @@ import { TrendingUp, BookOpen, AlertTriangle } from 'lucide-react-native';
 import { useAuth } from '../../src/hooks/useAuth';
 import { useMyConceptStats, useMyLogs } from '../../src/hooks/useReport';
 import { LoadingSpinner } from '../../src/components/common/LoadingSpinner';
+import { ScreenContent } from '../../src/components/layout/ScreenContent';
 import type { ConceptStat, MyLog } from '../../src/types';
 
 export default function ReportScreen() {
@@ -24,15 +25,16 @@ export default function ReportScreen() {
   const historySection = <HistorySection logs={myLogs ?? []} />;
 
   return (
-    <ScrollView className="flex-1 bg-gray-50" contentContainerStyle={{ paddingBottom: 32 }}>
-      {/* 헤더 */}
-      <View className="bg-white px-5 pt-14 pb-4 border-b border-gray-100">
-        <Text className="text-2xl font-bold text-gray-900">학습 리포트</Text>
-        <Text className="text-sm text-gray-500 mt-0.5">{profile?.display_name}님의 학습 현황</Text>
-      </View>
+    <ScreenContent>
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 32 }}>
+        {/* 헤더 */}
+        <View className="bg-white pt-14 pb-4 border-b border-gray-100 -mx-5 px-5 mb-0">
+          <Text className="text-2xl font-bold text-gray-900">학습 리포트</Text>
+          <Text className="text-sm text-gray-500 mt-0.5">{profile?.display_name}님의 학습 현황</Text>
+        </View>
 
-      {/* 요약 카드 */}
-      <View className="flex-row gap-3 px-4 py-4">
+        {/* 요약 카드 — 헤더만 전폭, 나머지는 ScreenContent 패딩 안에 맞춤 */}
+        <View className="flex-row gap-3 py-4">
         <View className="flex-1 bg-white rounded-2xl p-4 border border-gray-100 items-center">
           <TrendingUp size={20} color="#3B82F6" />
           <Text className="text-2xl font-bold text-gray-900 mt-1">
@@ -50,17 +52,18 @@ export default function ReportScreen() {
 
       {/* 태블릿: 2열 / 모바일: 세로 스크롤 */}
       {isTablet ? (
-        <View className="flex-row px-4 gap-3">
+        <View className="flex-row gap-3">
           <View className="flex-1">{conceptSection}</View>
           <View className="flex-1">{historySection}</View>
         </View>
       ) : (
-        <View className="px-4 gap-3">
+        <View className="gap-3">
           {conceptSection}
           {historySection}
         </View>
       )}
-    </ScrollView>
+      </ScrollView>
+    </ScreenContent>
   );
 }
 

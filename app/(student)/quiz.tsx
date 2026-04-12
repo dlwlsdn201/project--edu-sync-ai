@@ -8,6 +8,7 @@ import { submitAnswer, updateFeedback } from '../../src/api/quiz';
 import { generateHint } from '../../src/api/ai';
 import { LoadingSpinner } from '../../src/components/common/LoadingSpinner';
 import { Button } from '../../src/components/common/Button';
+import { ScreenContent } from '../../src/components/layout/ScreenContent';
 import type { Question } from '../../src/types';
 
 type Phase = 'answering' | 'correct' | 'wrong' | 'hint_loading' | 'hint_shown' | 'finished';
@@ -30,9 +31,9 @@ export default function QuizScreen() {
 
   if (isLoading) return <LoadingSpinner fullScreen />;
   if (!quizSet) return (
-    <View className="flex-1 items-center justify-center">
+    <ScreenContent outerClassName="bg-white" innerClassName="justify-center items-center">
       <Text className="text-gray-500">퀴즈를 불러올 수 없습니다.</Text>
-    </View>
+    </ScreenContent>
   );
 
   const questions = quizSet.questions;
@@ -110,19 +111,20 @@ export default function QuizScreen() {
   if (isFinished) {
     const pct = Math.round((score / questions.length) * 100);
     return (
-      <View className="flex-1 bg-white items-center justify-center px-6">
+      <ScreenContent outerClassName="bg-white" innerClassName="justify-center items-center py-12">
         <Text className="text-4xl font-bold text-primary mb-2">{pct}%</Text>
         <Text className="text-xl font-semibold text-gray-900 mb-1">퀴즈 완료!</Text>
-        <Text className="text-base text-gray-500 mb-8">
+        <Text className="text-base text-gray-500 mb-8 text-center">
           {questions.length}문제 중 {score}개 정답
         </Text>
         <Button label="목록으로 돌아가기" onPress={() => router.back()} />
-      </View>
+      </ScreenContent>
     );
   }
 
   return (
-    <ScrollView className="flex-1 bg-white" contentContainerStyle={{ flexGrow: 1, padding: 20, paddingTop: 60 }}>
+    <ScreenContent outerClassName="bg-white">
+      <ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1, paddingTop: 60, paddingBottom: 40 }}>
       {/* 진행률 */}
       <View className="flex-row items-center justify-between mb-2">
         <Text className="text-sm text-gray-400">{currentIndex + 1} / {questions.length}</Text>
@@ -224,6 +226,7 @@ export default function QuizScreen() {
           onPress={handleNext}
         />
       )}
-    </ScrollView>
+      </ScrollView>
+    </ScreenContent>
   );
 }

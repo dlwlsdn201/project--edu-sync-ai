@@ -164,6 +164,8 @@ npx expo run:android
 │   ├── components/common/
 │   │   ├── Button.tsx
 │   │   └── LoadingSpinner.tsx
+│   ├── components/layout/
+│   │   └── ScreenContent.tsx   # max-width + 좌우 패딩으로 콘텐츠 폭 제한
 │   └── types/index.ts
 │
 ├── supabase/

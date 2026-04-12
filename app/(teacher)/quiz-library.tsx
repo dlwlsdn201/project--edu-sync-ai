@@ -5,6 +5,7 @@ import { useAuth } from '../../src/hooks/useAuth';
 import { useTeacherQuizSets } from '../../src/hooks/useQuiz';
 import { getOrCreateDefaultClassroom } from '../../src/api/quiz';
 import { LoadingSpinner } from '../../src/components/common/LoadingSpinner';
+import { ScreenContent } from '../../src/components/layout/ScreenContent';
 import type { Classroom, QuizSet } from '../../src/types';
 
 export default function QuizLibraryScreen() {
@@ -23,32 +24,35 @@ export default function QuizLibraryScreen() {
   if (isLoading || !classroom) return <LoadingSpinner fullScreen />;
 
   return (
-    <View className="flex-1 bg-gray-50">
-      <View className="bg-white px-5 pt-14 pb-4 border-b border-gray-100">
-        <Text className="text-2xl font-bold text-gray-900">퀴즈 목록</Text>
-        <View className="flex-row items-center mt-1">
-          <Text className="text-sm text-gray-500">입장 코드: </Text>
-          <Text className="text-sm font-bold text-primary tracking-widest">
-            {classroom.entry_code}
-          </Text>
+    <ScreenContent>
+      <View className="flex-1">
+        <View className="bg-white pt-14 pb-4 border-b border-gray-100 -mx-5 px-5">
+          <Text className="text-2xl font-bold text-gray-900">퀴즈 목록</Text>
+          <View className="flex-row items-center mt-1">
+            <Text className="text-sm text-gray-500">입장 코드: </Text>
+            <Text className="text-sm font-bold text-primary tracking-widest">
+              {classroom.entry_code}
+            </Text>
+          </View>
         </View>
-      </View>
 
-      {!quizSets || quizSets.length === 0 ? (
-        <View className="flex-1 items-center justify-center">
-          <FileQuestion size={48} color="#D1D5DB" />
-          <Text className="text-base text-gray-400 mt-3">아직 생성된 퀴즈가 없습니다.</Text>
-          <Text className="text-sm text-gray-400">퀴즈 생성 탭에서 첫 퀴즈를 만들어보세요!</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={quizSets}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ padding: 16, gap: 12 }}
-          renderItem={({ item }) => <QuizCard quiz={item} />}
-        />
-      )}
-    </View>
+        {!quizSets || quizSets.length === 0 ? (
+          <View className="flex-1 items-center justify-center">
+            <FileQuestion size={48} color="#D1D5DB" />
+            <Text className="text-base text-gray-400 mt-3">아직 생성된 퀴즈가 없습니다.</Text>
+            <Text className="text-sm text-gray-400">퀴즈 생성 탭에서 첫 퀴즈를 만들어보세요!</Text>
+          </View>
+        ) : (
+          <FlatList
+            className="flex-1"
+            data={quizSets}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{ paddingVertical: 16, gap: 12 }}
+            renderItem={({ item }) => <QuizCard quiz={item} />}
+          />
+        )}
+      </View>
+    </ScreenContent>
   );
 }
 

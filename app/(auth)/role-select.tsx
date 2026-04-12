@@ -5,6 +5,7 @@ import { GraduationCap, BookOpen } from 'lucide-react-native';
 import { supabase } from '../../src/api/supabase';
 import { useAuth } from '../../src/hooks/useAuth';
 import { LoadingSpinner } from '../../src/components/common/LoadingSpinner';
+import { ScreenContent } from '../../src/components/layout/ScreenContent';
 import type { UserRole } from '../../src/types';
 
 /**
@@ -47,7 +48,7 @@ export default function RoleSelectScreen() {
   if (isLoading) return <LoadingSpinner fullScreen />;
 
   return (
-    <View className="flex-1 bg-white px-6 justify-center">
+    <ScreenContent outerClassName="bg-white" innerClassName="justify-center py-10">
       <Text className="text-3xl font-bold text-gray-900 text-center mb-2">
         반갑습니다!
       </Text>
@@ -73,7 +74,7 @@ export default function RoleSelectScreen() {
           onPress={() => handleSelectRole('student')}
         />
       </View>
-    </View>
+    </ScreenContent>
   );
 }
 
