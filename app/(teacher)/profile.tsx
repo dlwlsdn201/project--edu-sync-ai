@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, Alert, Platform } from 'react-native';
-import { LogOut } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useAuth } from '../../src/hooks/useAuth';
 import { Button } from '../../src/components/common/Button';
+import { supabase } from '../../src/api/supabase';
 
 export default function TeacherProfileScreen() {
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, refreshProfile } = useAuth();
+  const [isChangingRole, setIsChangingRole] = useState(false);
 
   const handleSignOut = async () => {
     if (Platform.OS === 'web') {
@@ -23,6 +24,36 @@ export default function TeacherProfileScreen() {
     router.replace('/');
   };
 
+  const handleChangeRole = async () => {
+    const confirmed = Platform.OS === 'web'
+      ? window.confirm('역할을 변경하시겠습니까? 역할 선택 화면으로 이동합니다.')
+      : await new Promise<boolean>((resolve) => {
+          Alert.alert('역할 변경', '역할 선택 화면으로 이동하시겠습니까?', [
+            { text: '취소', style: 'cancel', onPress: () => resolve(false) },
+            { text: '변경', onPress: () => resolve(true) },
+          ]);
+        });
+
+    if (!confirmed) return;
+
+    setIsChangingRole(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role: null })
+        .eq('id', profile!.id);
+
+      if (error) throw error;
+      await refreshProfile();
+      router.replace('/(auth)/role-select');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '오류가 발생했습니다.';
+      Alert.alert('오류', msg);
+    } finally {
+      setIsChangingRole(false);
+    }
+  };
+
   return (
     <View className="flex-1 bg-gray-50 px-5 pt-16">
       <Text className="text-2xl font-bold text-gray-900 mb-8">프로필</Text>
@@ -37,7 +68,10 @@ export default function TeacherProfileScreen() {
         <Text className="text-base font-semibold text-gray-900">교사</Text>
       </View>
 
-      <Button label="로그아웃" onPress={handleSignOut} />
+      <View className="gap-3">
+        <Button label="역할 변경" variant="outline" onPress={handleChangeRole} isLoading={isChangingRole} />
+        <Button label="로그아웃" onPress={handleSignOut} />
+      </View>
     </View>
   );
 }
