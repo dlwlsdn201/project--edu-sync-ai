@@ -76,13 +76,21 @@ export default function TeacherProfileScreen() {
       </View>
 
       <View className="bg-white rounded-2xl p-5 border border-gray-100 mb-8">
-        <Text className="text-xs text-gray-400 mb-1">역할</Text>
-        <Text className="text-base font-semibold text-gray-900">교사</Text>
+        <Text className="text-xs text-gray-400 mb-2">역할</Text>
+        <View className="flex-row items-center justify-between gap-3">
+          <Text className="text-base font-semibold text-gray-900 shrink">교사</Text>
+          <Button
+            label="역할 변경"
+            variant="outline"
+            className="!w-auto shrink-0 px-3 py-2 min-w-0"
+            onPress={handleChangeRole}
+            isLoading={isChangingRole}
+          />
+        </View>
       </View>
 
-      <View className="gap-3">
-        <Button label="역할 변경" variant="outline" onPress={handleChangeRole} isLoading={isChangingRole} />
-        <Button label="로그아웃" onPress={handleSignOut} />
+      <View className="items-center w-full">
+        <Button label="로그아웃" variant="outlineNeutral" onPress={handleSignOut} />
       </View>
     </ScreenContent>
   );
