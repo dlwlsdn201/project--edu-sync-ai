@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, ScrollView, Alert } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { CheckCircle, XCircle, Lightbulb } from 'lucide-react-native';
 import { useQuizSet } from '../../src/hooks/useQuiz';
 import { useAuth } from '../../src/hooks/useAuth';
-import { submitAnswer, updateFeedback } from '../../src/api/quiz';
+import { isQuizSetCompletedByStudent, submitAnswer, updateFeedback } from '../../src/api/quiz';
 import { generateHint } from '../../src/api/ai';
 import { LoadingSpinner } from '../../src/components/common/LoadingSpinner';
 import { Button } from '../../src/components/common/Button';
@@ -12,6 +12,9 @@ import { ScreenContent } from '../../src/components/layout/ScreenContent';
 import type { Question } from '../../src/types';
 
 type Phase = 'answering' | 'correct' | 'wrong' | 'hint_loading' | 'hint_shown' | 'finished';
+
+/** 응시 가능 여부: 로그 완료 여부 확인 전까지 대기 */
+type EntryGate = 'checking' | 'allowed' | 'blocked';
 
 /**
  * 학생 퀴즈 응시 화면 — 제출 로그와 AI 힌트(ai_feedback)를 연동합니다.
@@ -28,6 +31,24 @@ export default function QuizScreen() {
   const [score, setScore] = useState(0);
   // 오답 행의 id — 힌트 생성 후 DB의 ai_feedback 컬럼에 저장할 때 사용
   const [lastLogId, setLastLogId] = useState<string | null>(null);
+  const [entryGate, setEntryGate] = useState<EntryGate>('checking');
+
+  // 이미 전체 문항을 제출한 퀴즈는 URL 직접 진입도 막아 통계 일관성을 유지합니다.
+  useEffect(() => {
+    if (!quizSet || !profile?.id) {
+      setEntryGate('checking');
+      return;
+    }
+    let cancelled = false;
+    setEntryGate('checking');
+    isQuizSetCompletedByStudent(profile.id, quizSet).then((done) => {
+      if (cancelled) return;
+      setEntryGate(done ? 'blocked' : 'allowed');
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [quizSet, profile?.id]);
 
   if (isLoading) return <LoadingSpinner fullScreen />;
   if (!quizSet) return (
@@ -35,6 +56,24 @@ export default function QuizScreen() {
       <Text className="text-gray-500">퀴즈를 불러올 수 없습니다.</Text>
     </ScreenContent>
   );
+
+  if (entryGate === 'checking') {
+    return <LoadingSpinner fullScreen />;
+  }
+
+  if (entryGate === 'blocked') {
+    return (
+      <ScreenContent outerClassName="bg-white" innerClassName="justify-center items-center px-6 py-12">
+        <Text className="text-xl font-semibold text-gray-900 text-center mb-2">
+          이미 응시를 완료한 퀴즈입니다
+        </Text>
+        <Text className="text-sm text-gray-500 text-center mb-8 leading-6">
+          학습 리포트·통계 신뢰도를 위해 동일 퀴즈를 다시 풀 수 없습니다.
+        </Text>
+        <Button label="퀴즈 목록으로" onPress={() => router.back()} />
+      </ScreenContent>
+    );
+  }
 
   const questions = quizSet.questions;
   const question: Question = questions[currentIndex];

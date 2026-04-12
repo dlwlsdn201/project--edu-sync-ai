@@ -103,6 +103,52 @@ export interface StudentQuizListResult {
   quizSets: QuizSet[];
   /** classroom_members 에 한 건이라도 있으면 true(입장 코드로 최소 한 수업 참여) */
   hasClassroomMembership: boolean;
+  /** student_logs 기준으로 문항 전체 제출이 확인된 퀴즈 세트 id(재응시 방지·UI 완료 표시) */
+  completedQuizSetIds: string[];
+}
+
+/**
+ * 각 퀴즈의 모든 question_id 에 대해 로그가 있으면 완료로 본다.
+ */
+function computeCompletedQuizSetIds(
+  quizSets: QuizSet[],
+  logs: { quiz_set_id: string; question_id: string }[],
+): string[] {
+  const answeredByQuiz = new Map<string, Set<string>>();
+  for (const row of logs) {
+    if (!answeredByQuiz.has(row.quiz_set_id)) {
+      answeredByQuiz.set(row.quiz_set_id, new Set());
+    }
+    answeredByQuiz.get(row.quiz_set_id)!.add(row.question_id);
+  }
+  const out: string[] = [];
+  for (const qs of quizSets) {
+    if (qs.questions.length === 0) continue;
+    const answered = answeredByQuiz.get(qs.id);
+    if (!answered) continue;
+    const allAnswered = qs.questions.every((q) => answered.has(q.id));
+    if (allAnswered) out.push(qs.id);
+  }
+  return out;
+}
+
+/**
+ * 해당 학생이 이 퀴즈 세트의 모든 문항을 이미 제출했는지(응시 화면 진입 차단용).
+ */
+export async function isQuizSetCompletedByStudent(
+  studentId: string,
+  quizSet: QuizSet,
+): Promise<boolean> {
+  if (quizSet.questions.length === 0) return false;
+  const { data: logs, error } = await supabase
+    .from('student_logs')
+    .select('question_id')
+    .eq('student_id', studentId)
+    .eq('quiz_set_id', quizSet.id);
+
+  if (error || !logs) return false;
+  const answered = new Set(logs.map((l) => l.question_id));
+  return quizSet.questions.every((q) => answered.has(q.id));
 }
 
 /**
@@ -116,7 +162,7 @@ export async function getStudentQuizContext(studentId: string): Promise<StudentQ
 
   if (memberErr) throw new Error(`수업 목록 조회 실패: ${memberErr.message}`);
   if (!memberships || memberships.length === 0) {
-    return { quizSets: [], hasClassroomMembership: false };
+    return { quizSets: [], hasClassroomMembership: false, completedQuizSetIds: [] };
   }
 
   const classroomIds = memberships.map((m) => m.classroom_id);
@@ -128,9 +174,26 @@ export async function getStudentQuizContext(studentId: string): Promise<StudentQ
     .order('created_at', { ascending: false });
 
   if (error) throw new Error(`퀴즈 목록 조회 실패: ${error.message}`);
+  const quizSets = (data ?? []) as QuizSet[];
+
+  if (quizSets.length === 0) {
+    return { quizSets, hasClassroomMembership: true, completedQuizSetIds: [] };
+  }
+
+  const quizSetIds = quizSets.map((q) => q.id);
+  const { data: logs, error: logErr } = await supabase
+    .from('student_logs')
+    .select('quiz_set_id, question_id')
+    .eq('student_id', studentId)
+    .in('quiz_set_id', quizSetIds);
+
+  if (logErr) throw new Error(`응시 기록 조회 실패: ${logErr.message}`);
+  const completedQuizSetIds = computeCompletedQuizSetIds(quizSets, logs ?? []);
+
   return {
-    quizSets: (data ?? []) as QuizSet[],
+    quizSets,
     hasClassroomMembership: true,
+    completedQuizSetIds,
   };
 }
 

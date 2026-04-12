@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, FlatList, Pressable, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { router } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { BookOpen, ChevronRight, CheckCircle2, FileQuestion, KeyRound } from 'lucide-react-native';
 import { useAuth } from '../../src/hooks/useAuth';
 import { useStudentQuizSets } from '../../src/hooks/useQuiz';
@@ -24,6 +25,15 @@ export default function QuizListScreen() {
   const { data, isLoading, refetch } = useStudentQuizSets(studentId);
   const quizSets = data?.quizSets ?? [];
   const hasClassroomMembership = data?.hasClassroomMembership ?? false;
+  const completedQuizSetIds = data?.completedQuizSetIds ?? [];
+  const completedSet = useMemo(() => new Set(completedQuizSetIds), [completedQuizSetIds]);
+
+  // 응시 완료 후 목록으로 돌아왔을 때 완료 스타일 즉시 반영
+  useFocusEffect(
+    useCallback(() => {
+      if (studentId) void refetch();
+    }, [studentId, refetch]),
+  );
 
   const [code, setCode] = useState('');
   const [isJoining, setIsJoining] = useState(false);
@@ -92,7 +102,9 @@ export default function QuizListScreen() {
           ListEmptyComponent={
             <QuizListEmptyState hasClassroomMembership={hasClassroomMembership} />
           }
-          renderItem={({ item }) => <QuizListItem quiz={item} />}
+          renderItem={({ item }) => (
+            <QuizListItem quiz={item} isCompleted={completedSet.has(item.id)} />
+          )}
         />
       </KeyboardAvoidingView>
     </ScreenContent>
@@ -213,20 +225,66 @@ function QuizListEmptyState({ hasClassroomMembership }: QuizListEmptyStateProps)
   );
 }
 
-function QuizListItem({ quiz }: { quiz: QuizSet }) {
+interface QuizListItemProps {
+  quiz: QuizSet;
+  /** 모든 문항 제출 완료 — 재응시 방지·통계 신뢰도 유지 */
+  isCompleted: boolean;
+}
+
+/**
+ * 완료된 퀴즈는 취소선·비활성 스타일로 재선택을 막습니다.
+ */
+function QuizListItem({ quiz, isCompleted }: QuizListItemProps) {
+  const goQuiz = () => {
+    if (isCompleted) return;
+    router.push({ pathname: '/(student)/quiz', params: { quizSetId: quiz.id } });
+  };
+
   return (
     <Pressable
-      onPress={() => router.push({ pathname: '/(student)/quiz', params: { quizSetId: quiz.id } })}
-      className="bg-white rounded-2xl px-4 py-4 border border-gray-100 flex-row items-center active:bg-gray-50"
+      onPress={goQuiz}
+      disabled={isCompleted}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: isCompleted }}
+      accessibilityLabel={
+        isCompleted ? `${quiz.title}, 응시 완료, 다시 풀 수 없음` : quiz.title
+      }
+      className={[
+        'rounded-2xl px-4 py-4 border flex-row items-center',
+        isCompleted
+          ? 'bg-gray-50 border-gray-200 opacity-70'
+          : 'bg-white border-gray-100 active:bg-gray-50',
+      ].join(' ')}
     >
-      <View className="bg-primary/10 rounded-xl p-2.5 mr-3">
-        <BookOpen size={20} color="#3B82F6" />
+      <View
+        className={[
+          'rounded-xl p-2.5 mr-3',
+          isCompleted ? 'bg-gray-200/80' : 'bg-primary/10',
+        ].join(' ')}
+      >
+        <BookOpen size={20} color={isCompleted ? '#9CA3AF' : '#3B82F6'} />
       </View>
-      <View className="flex-1">
-        <Text className="text-base font-semibold text-gray-900">{quiz.title}</Text>
-        <Text className="text-sm text-gray-500">{quiz.questions.length}문제</Text>
+      <View className="flex-1 min-w-0">
+        <Text
+          className={[
+            'text-base font-semibold',
+            isCompleted ? 'text-gray-400 line-through' : 'text-gray-900',
+          ].join(' ')}
+          numberOfLines={2}
+        >
+          {quiz.title}
+        </Text>
+        <Text
+          className={[
+            'text-sm mt-0.5',
+            isCompleted ? 'text-gray-400 line-through' : 'text-gray-500',
+          ].join(' ')}
+        >
+          {quiz.questions.length}문제
+          {isCompleted ? ' · 응시 완료' : ''}
+        </Text>
       </View>
-      <ChevronRight size={18} color="#D1D5DB" />
+      {!isCompleted ? <ChevronRight size={18} color="#D1D5DB" /> : null}
     </Pressable>
   );
 }
