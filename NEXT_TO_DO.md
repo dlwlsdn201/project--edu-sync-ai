@@ -2,11 +2,19 @@
 
 ---
 
-## 🔧 내일 할 일 (Day 8)
+## 제출·시연
 
-### 1. 카카오 개발자 콘솔 설정 확인 (KOE101 해결)
+- **웹(Vercel) 데모 시연**: [docs/demo-guide.md](docs/demo-guide.md) — 사전 체크, 5~7분 스크립트, 트러블슈팅 요약.
+- **화면별 사용법**: [docs/user-guide.md](docs/user-guide.md).
+- **전체 수동 검증**: [docs/e2e-test-checklist.md](docs/e2e-test-checklist.md) (시연은 웹 우선, 네이티브는 개발 빌드).
 
-카카오 로그인 버튼 클릭 시 KOE101 에러 발생 중. 아래 항목 순서대로 확인:
+---
+
+## 배포·인프라 점검
+
+### 1. 카카오 개발자 콘솔 설정 (KOE101 등)
+
+로그인 오류 시 아래를 순서대로 확인합니다.
 
 1. [카카오 Developers](https://developers.kakao.com) → 내 애플리케이션 → **카카오 로그인 활성화** ON 확인
 2. **Redirect URI** 등록 확인:
@@ -16,10 +24,11 @@
 3. **앱 키** → REST API 키가 `.env`의 `EXPO_PUBLIC_KAKAO_REST_API_KEY` 값과 일치하는지 확인
 4. **플랫폼** → iOS(`com.edusync.ai`) / Android(`com.edusync.ai`) 등록 확인
 
-> ⚠️ 카카오 로그인 테스트는 Expo Go 불가. 반드시 개발 빌드로 실행:
+> 네이티브 앱에서의 카카오 로그인 테스트는 Expo Go가 아닌 **개발 빌드**가 필요합니다:
 > ```bash
 > npx expo run:ios
 > ```
+> 웹 시연은 브라우저에서 진행하면 됩니다([데모 가이드](docs/demo-guide.md)).
 
 ### 2. Vercel & GitHub Secrets 설정
 
@@ -45,7 +54,7 @@ eas build:configure   # app.json에 EAS 프로젝트 ID 자동 추가
 
 ### 4. E2E 테스트 실행
 
-카카오 로그인 연동 완료 후 → `docs/e2e-test-checklist.md` 참고하여 전체 플로우 검증
+카카오 로그인 연동 후 → [docs/e2e-test-checklist.md](docs/e2e-test-checklist.md) 참고
 
 ### 5. EAS 빌드 실행
 
@@ -55,39 +64,16 @@ npm run build:preview
 
 ---
 
-## ✅ 완료된 작업
+## 완료된 작업 (요약)
 
-### Day 1-2
-- [x] Expo + Supabase + NativeWind 초기 세팅
-- [x] 카카오 로그인 + Edge Function
-- [x] DB 스키마 (profiles, classrooms, quiz_sets, student_logs)
-
-### Day 3-4
-- [x] 역할 선택 화면 (`app/(auth)/role-select.tsx`)
-- [x] 교사: AI 퀴즈 생성 + 목록 (`app/(teacher)/`)
-- [x] 학생: 수업 참여 + 퀴즈 응시 + AI 힌트 (`app/(student)/`)
-- [x] Gemini 2.0 Flash API 연동 (`src/api/ai.ts`)
-
-### Day 5-6
-- [x] 교사: 실시간 대시보드 (`app/(teacher)/dashboard.tsx`)
-- [x] 학생: 학습 리포트 (`app/(student)/report.tsx`)
-- [x] Supabase Realtime 구독 (`src/hooks/useRealtimeLogs.ts`)
-
-### Day 7
-- [x] EAS Build 설정 (`eas.json`) — preview + production
-- [x] Vercel 웹 배포 설정 (`vercel.json`)
-- [x] GitHub Actions CI/CD (`.github/workflows/deploy-vercel.yml`)
-- [x] E2E 테스트 체크리스트 (`docs/e2e-test-checklist.md`)
-- [x] 로그인 버튼 UI 스타일 보완 (`Button.tsx` className override 버그 수정)
-- [x] 카카오 로그인 후 무한 스피너 해결 (`AuthContext.tsx`)
-
-### Day 8 (오늘)
-- [x] `react-native-worklets` 누락으로 인한 Bundling 에러 수정
-- [x] `Button` 컴포넌트 `className` prop이 내부 스타일을 덮어쓰는 버그 수정
+- Expo + Supabase + NativeWind, 카카오 Edge Function, DB 스키마
+- 역할 선택, 교사(퀴즈 생성·목록·대시보드), 학생(참여·응시·리포트), Gemini 퀴즈·힌트
+- Supabase Realtime, EAS·Vercel·GitHub Actions, E2E 체크리스트
+- UI 버튼·Auth 스피너·worklets 번들 이슈 등 수정
 
 ---
 
-## 📁 전체 주요 파일
+## 주요 파일
 
 | 파일 | 역할 |
 |------|------|
@@ -106,4 +92,5 @@ npm run build:preview
 | `eas.json` | EAS Build 설정 |
 | `vercel.json` | Vercel 웹 배포 설정 |
 | `.github/workflows/deploy-vercel.yml` | CI/CD |
+| `docs/demo-guide.md` | 데모 시연 가이드 |
 | `docs/e2e-test-checklist.md` | E2E 테스트 체크리스트 |

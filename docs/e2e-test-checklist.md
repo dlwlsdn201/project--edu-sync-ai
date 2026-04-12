@@ -1,6 +1,6 @@
 # EduSync AI — E2E 테스트 체크리스트
 
-전체 플로우를 순서대로 확인합니다. 개발 빌드(`npx expo run:ios` / `npx expo run:android`) 또는 웹(`npm run web`)에서 테스트합니다.
+전체 플로우를 순서대로 확인합니다. **공모전·발표 시연은 웹(Vercel) 우선**을 권장합니다([데모 가이드](./demo-guide.md)). 개발 빌드(`npx expo run:ios` / `npx expo run:android`) 또는 로컬 웹(`npm run web`)에서도 동일 항목을 검증할 수 있습니다.
 
 ---
 

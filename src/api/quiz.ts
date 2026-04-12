@@ -123,13 +123,19 @@ export async function getStudentQuizSets(studentId: string): Promise<QuizSet[]> 
 }
 
 /**
- * 학생 응답을 저장합니다.
+ * 학생 응답을 저장하고, 이후 AI 힌트와 연결할 수 있도록 행 id를 반환합니다.
  */
 export async function submitAnswer(
-  log: Omit<StudentLog, 'id' | 'created_at'>,
-): Promise<void> {
-  const { error } = await supabase.from('student_logs').insert(log);
+  log: Omit<StudentLog, 'id' | 'created_at' | 'ai_feedback'>,
+): Promise<string> {
+  const { data, error } = await supabase
+    .from('student_logs')
+    .insert(log)
+    .select('id')
+    .single();
+
   if (error) throw new Error(`응답 저장 실패: ${error.message}`);
+  return data.id;
 }
 
 /**

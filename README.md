@@ -21,6 +21,17 @@
 
 ---
 
+## 문서
+
+| 문서 | 설명 |
+|------|------|
+| [docs/user-guide.md](docs/user-guide.md) | 사용자 가이드 (탭·플로우) |
+| [docs/demo-guide.md](docs/demo-guide.md) | 웹(Vercel) 데모 시연 스크립트 |
+| [docs/e2e-test-checklist.md](docs/e2e-test-checklist.md) | 수동 E2E 체크리스트 |
+| [NEXT_TO_DO.md](NEXT_TO_DO.md) | 인프라·카카오·Secrets 점검 |
+
+---
+
 ## 기술 스택
 
 | 분류 | 기술 |
@@ -158,6 +169,8 @@ npx expo run:android
 │   └── functions/kakao-auth/   # 카카오 인증 Edge Function
 │
 ├── docs/
+│   ├── user-guide.md           # 사용자 가이드
+│   ├── demo-guide.md           # 웹 데모 시연 가이드
 │   └── e2e-test-checklist.md   # 수동 E2E 테스트 체크리스트
 │
 ├── eas.json                    # EAS Build 설정

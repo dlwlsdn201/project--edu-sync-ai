@@ -4,7 +4,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { CheckCircle, XCircle, Lightbulb } from 'lucide-react-native';
 import { useQuizSet } from '../../src/hooks/useQuiz';
 import { useAuth } from '../../src/hooks/useAuth';
-import { submitAnswer } from '../../src/api/quiz';
+import { submitAnswer, updateFeedback } from '../../src/api/quiz';
 import { generateHint } from '../../src/api/ai';
 import { LoadingSpinner } from '../../src/components/common/LoadingSpinner';
 import { Button } from '../../src/components/common/Button';
@@ -12,6 +12,9 @@ import type { Question } from '../../src/types';
 
 type Phase = 'answering' | 'correct' | 'wrong' | 'hint_loading' | 'hint_shown' | 'finished';
 
+/**
+ * 학생 퀴즈 응시 화면 — 제출 로그와 AI 힌트(ai_feedback)를 연동합니다.
+ */
 export default function QuizScreen() {
   const { quizSetId } = useLocalSearchParams<{ quizSetId: string }>();
   const { profile } = useAuth();
@@ -22,6 +25,8 @@ export default function QuizScreen() {
   const [phase, setPhase] = useState<Phase>('answering');
   const [hint, setHint] = useState('');
   const [score, setScore] = useState(0);
+  // 오답 행의 id — 힌트 생성 후 DB의 ai_feedback 컬럼에 저장할 때 사용
+  const [lastLogId, setLastLogId] = useState<string | null>(null);
 
   if (isLoading) return <LoadingSpinner fullScreen />;
   if (!quizSet) return (
@@ -44,19 +49,33 @@ export default function QuizScreen() {
 
     const isCorrect = selectedIndex === question.correct_index;
 
-    await submitAnswer({
-      student_id: profile.id,
-      quiz_set_id: quizSet.id,
-      question_id: question.id,
-      selected_index: selectedIndex,
-      is_correct: isCorrect,
-    }).catch(() => {});
+    try {
+      const logId = await submitAnswer({
+        student_id: profile.id,
+        quiz_set_id: quizSet.id,
+        question_id: question.id,
+        selected_index: selectedIndex,
+        is_correct: isCorrect,
+      });
 
-    if (isCorrect) {
-      setScore((s) => s + 1);
-      setPhase('correct');
-    } else {
-      setPhase('wrong');
+      if (isCorrect) {
+        setLastLogId(null);
+        setScore((s) => s + 1);
+        setPhase('correct');
+      } else {
+        setLastLogId(logId);
+        setPhase('wrong');
+      }
+    } catch {
+      // 로그 저장 실패 시에도 UI 피드백은 진행 (Realtime·리포트는 누락될 수 있음)
+      if (isCorrect) {
+        setLastLogId(null);
+        setScore((s) => s + 1);
+        setPhase('correct');
+      } else {
+        setLastLogId(null);
+        setPhase('wrong');
+      }
     }
   };
 
@@ -66,6 +85,10 @@ export default function QuizScreen() {
       const h = await generateHint(question, selectedIndex!);
       setHint(h);
       setPhase('hint_shown');
+      // Supabase에 힌트 텍스트를 남겨 두어 향후 리포트·분석에 활용 가능
+      if (lastLogId) {
+        await updateFeedback(lastLogId, h).catch(() => {});
+      }
     } catch {
       setHint('힌트를 불러올 수 없습니다.');
       setPhase('hint_shown');
@@ -73,6 +96,7 @@ export default function QuizScreen() {
   };
 
   const handleNext = () => {
+    setLastLogId(null);
     if (currentIndex + 1 >= questions.length) {
       setPhase('finished');
     } else {
