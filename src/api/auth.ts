@@ -1,7 +1,7 @@
-import * as WebBrowser from 'expo-web-browser';
-import { Platform } from 'react-native';
-import { supabase } from './supabase';
-import type { Profile } from '../types';
+import * as WebBrowser from "expo-web-browser";
+import { Platform } from "react-native";
+import type { Profile } from "../types";
+import { supabase } from "./supabase";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -11,16 +11,20 @@ const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL!;
 export async function signInWithKakao(): Promise<Profile | null> {
   const redirectUri = `${SUPABASE_URL}/functions/v1/kakao-auth`;
 
-  // 웹: 현재 페이지를 카카오 로그인으로 리다이렉트 (팝업 불필요)
-  // state 파라미터로 콜백 URL을 Edge Function에 전달
-  if (Platform.OS === 'web') {
+  // 웹: 현재 페이지를 카카오 로그인으로 리다이렉트
+  if (Platform.OS === "web") {
     const webCallbackUrl = window.location.origin;
     const kakaoAuthUrl =
       `https://kauth.kakao.com/oauth/authorize` +
       `?client_id=${KAKAO_REST_API_KEY}` +
       `&redirect_uri=${encodeURIComponent(redirectUri)}` +
       `&response_type=code` +
-      `&state=${encodeURIComponent(webCallbackUrl)}`;
+      `&state=${encodeURIComponent(webCallbackUrl)}` +
+      `&prompt=login`;
+    console.log('[Auth] 카카오 로그인 리다이렉트:', {
+      clientId: KAKAO_REST_API_KEY ? '설정됨' : '없음(undefined)',
+      redirectUri,
+    });
     window.location.href = kakaoAuthUrl;
     return null;
   }
@@ -34,22 +38,22 @@ export async function signInWithKakao(): Promise<Profile | null> {
 
   const result = await WebBrowser.openAuthSessionAsync(
     kakaoAuthUrl,
-    'edusync://',
+    "edusync://",
   );
 
-  if (result.type !== 'success' || !result.url) {
+  if (result.type !== "success" || !result.url) {
     return null;
   }
 
   const tokens = extractTokensFromDeepLink(result.url);
   if (!tokens) {
-    console.error('[Auth] 딥링크에서 토큰 추출 실패:', result.url);
+    console.error("[Auth] 딥링크에서 토큰 추출 실패:", result.url);
     return null;
   }
 
   const { error: sessionError } = await supabase.auth.setSession(tokens);
   if (sessionError) {
-    console.error('[Auth] 세션 설정 오류:', sessionError.message);
+    console.error("[Auth] 세션 설정 오류:", sessionError.message);
     return null;
   }
 
@@ -61,21 +65,22 @@ export async function signOut(): Promise<void> {
   if (error) throw error;
 }
 
-export async function getCurrentProfile(): Promise<Profile | null> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return null;
+export async function getCurrentProfile(userId?: string): Promise<Profile | null> {
+  let uid = userId;
+  if (!uid) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+    uid = user.id;
+  }
 
   const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
+    .from("profiles")
+    .select("*")
+    .eq("id", uid)
     .single();
 
   if (error) {
-    console.error('[Auth] 프로필 조회 오류:', error.message);
+    console.error("[Auth] 프로필 조회 오류:", error.message);
     return null;
   }
 
@@ -87,8 +92,8 @@ function extractTokensFromDeepLink(
 ): { access_token: string; refresh_token: string } | null {
   try {
     const parsed = new URL(url);
-    const accessToken = parsed.searchParams.get('access_token');
-    const refreshToken = parsed.searchParams.get('refresh_token');
+    const accessToken = parsed.searchParams.get("access_token");
+    const refreshToken = parsed.searchParams.get("refresh_token");
     if (!accessToken || !refreshToken) return null;
     return { access_token: accessToken, refresh_token: refreshToken };
   } catch {
