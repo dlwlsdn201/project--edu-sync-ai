@@ -87,6 +87,8 @@ EXPO_PUBLIC_GEMINI_API_KEY=AIza...
 # 순서대로 실행
 supabase/migrations/001_initial_schema.sql
 supabase/migrations/002_role_nullable.sql
+# (선택) 002를 건너뛴 경우 역할 변경 시 400이 나면 아래도 실행
+supabase/migrations/003_ensure_profiles_role_nullable.sql
 ```
 
 **2. Edge Function 배포**

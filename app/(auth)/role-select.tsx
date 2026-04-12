@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, Alert } from 'react-native';
-import { Redirect } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { GraduationCap, BookOpen } from 'lucide-react-native';
 import { supabase } from '../../src/api/supabase';
 import { useAuth } from '../../src/hooks/useAuth';
 import { LoadingSpinner } from '../../src/components/common/LoadingSpinner';
 import type { UserRole } from '../../src/types';
 
+/**
+ * 역할 선택 완료 후 해당 역할의 프로필 탭으로 이동합니다.
+ * (역할 변경 플로우에서 다시 설정 화면으로 돌아오도록 맞춤)
+ */
 export default function RoleSelectScreen() {
   const { profile, refreshProfile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -25,6 +29,12 @@ export default function RoleSelectScreen() {
 
       if (error) throw error;
       await refreshProfile();
+      // 역할별 프로필 탭으로 복귀 (역할 변경 진입과 동일한 맥락)
+      if (role === 'teacher') {
+        router.replace('/(teacher)/profile');
+      } else {
+        router.replace('/(student)/profile');
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : '오류가 발생했습니다.';
       Alert.alert('오류', msg);

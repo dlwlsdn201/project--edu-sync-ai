@@ -47,8 +47,17 @@ export default function StudentProfileScreen() {
       await refreshProfile();
       router.replace('/(auth)/role-select');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : '오류가 발생했습니다.';
-      Alert.alert('오류', msg);
+      const raw = err instanceof Error ? err.message : '오류가 발생했습니다.';
+      const isNullConstraint =
+        /null value|not-null|23502|violates.*constraint/i.test(raw);
+      const msg = isNullConstraint
+        ? `${raw}\n\n[해결] Supabase → SQL Editor 에서 supabase/migrations/003_ensure_profiles_role_nullable.sql 을 실행해 주세요.`
+        : raw;
+      if (Platform.OS === 'web') {
+        window.alert(`오류\n\n${msg}`);
+      } else {
+        Alert.alert('오류', msg);
+      }
     } finally {
       setIsChangingRole(false);
     }
