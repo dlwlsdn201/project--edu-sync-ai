@@ -1,27 +1,56 @@
 import type { Question } from '../types';
 
 const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
-// 신규 키는 2.0-flash 미제공 → 기본은 2.5-flash (무료 티어에서도 일반적으로 사용 가능). 필요 시 .env 로 교체.
+// 기본: 2.5-flash. 429가 잦으면 EXPO_PUBLIC_GEMINI_MODEL=gemini-2.5-flash-lite 권장(할당량이 별도일 수 있음).
 const GEMINI_MODEL = process.env.EXPO_PUBLIC_GEMINI_MODEL ?? 'gemini-2.5-flash';
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+/** 주 모델이 429로 끝까지 실패하면 한 번 시도 (무료 티어에서 쿼터가 분리된 경우가 있음) */
+const GEMINI_FALLBACK_MODEL =
+  process.env.EXPO_PUBLIC_GEMINI_FALLBACK_MODEL ?? 'gemini-2.5-flash-lite';
 
-/** 503·429 는 일시적이므로 자동 재시도 */
+function geminiUrl(modelId: string): string {
+  return `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${GEMINI_API_KEY}`;
+}
+
+/** 503·429 는 일시적 과부하/속도 제한 → 재시도 */
 const GEMINI_RETRY_STATUSES = new Set([503, 429]);
-const GEMINI_MAX_ATTEMPTS = 4;
+const GEMINI_MAX_ATTEMPTS_PER_MODEL = 5;
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/** Google 오류 본문에 "retry in 42.3s" 형태가 있으면 그만큼 대기 */
+function parseRetryAfterMs(errorBody: string): number | null {
+  try {
+    const parsed = JSON.parse(errorBody) as { error?: { message?: string } };
+    const msg = parsed?.error?.message ?? '';
+    const m = /[Rr]etry in ([\d.]+)\s*s/i.exec(msg);
+    if (m) return Math.min(Math.ceil(parseFloat(m[1]) * 1000), 120_000);
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+function backoffMsForRetry(status: number, attemptIndex: number, errorBody: string): number {
+  const fromApi = parseRetryAfterMs(errorBody);
+  if (fromApi != null) return fromApi;
+  // 429 는 분당 한도라 짧은 백오프만으로는 부족한 경우가 많음 → 더 길게
+  if (status === 429) {
+    return Math.min(10_000 * (attemptIndex + 1), 90_000);
+  }
+  return 1000 * 2 ** attemptIndex;
+}
+
 function toUserFacingGeminiError(status: number, body: string): Error {
   if (status === 503) {
     return new Error(
-      'Gemini 서버가 일시적으로 혼잡합니다. 자동으로 몇 번 더 시도했어요. 잠시 후 다시 눌러 주세요.',
+      'Gemini 서버가 일시적으로 혼잡합니다. 자동으로 재시도했어요. 잠시 후 다시 눌러 주세요.',
     );
   }
   if (status === 429) {
     return new Error(
-      'Gemini 요청 한도에 걸렸습니다. 잠시 후 다시 시도하거나 Google AI Studio에서 할당량·결제를 확인해 주세요.',
+      'Gemini 요청 한도(분당·일일)에 걸렸습니다. 수 분 뒤 재시도하거나, Google AI Studio에서 할당량·결제를 확인하고, .env 에서 EXPO_PUBLIC_GEMINI_MODEL=gemini-2.5-flash-lite 로 바꿔 보세요.',
     );
   }
   return new Error(`Gemini API 오류: ${status} ${body}`);
@@ -33,34 +62,52 @@ async function callGemini(prompt: string): Promise<string> {
     generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
   });
 
-  for (let attempt = 0; attempt < GEMINI_MAX_ATTEMPTS; attempt++) {
-    const res = await fetch(GEMINI_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body,
-    });
+  const modelChain = [GEMINI_MODEL, GEMINI_FALLBACK_MODEL].filter(
+    (m, i, arr) => m && arr.indexOf(m) === i,
+  );
 
-    if (res.ok) {
-      const data = await res.json();
-      const text: string = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-      return text;
+  let lastErrorText = '';
+  let lastStatus = 0;
+
+  for (const modelId of modelChain) {
+    const url = geminiUrl(modelId);
+
+    for (let attempt = 0; attempt < GEMINI_MAX_ATTEMPTS_PER_MODEL; attempt++) {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const text: string = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+        return text;
+      }
+
+      const errorText = await res.text();
+      const status = res.status;
+      lastErrorText = errorText;
+      lastStatus = status;
+
+      const willRetry =
+        GEMINI_RETRY_STATUSES.has(status) &&
+        attempt < GEMINI_MAX_ATTEMPTS_PER_MODEL - 1;
+
+      if (willRetry) {
+        await sleep(backoffMsForRetry(status, attempt, errorText));
+        continue;
+      }
+
+      // 재시도 불가(400 등)이거나 이 모델에서 마지막 시도까지 실패 → 다음 폴백 모델
+      if (!GEMINI_RETRY_STATUSES.has(status)) {
+        throw toUserFacingGeminiError(status, errorText);
+      }
+      break;
     }
-
-    const errorText = await res.text();
-    const status = res.status;
-    const willRetry =
-      GEMINI_RETRY_STATUSES.has(status) && attempt < GEMINI_MAX_ATTEMPTS - 1;
-
-    if (willRetry) {
-      // 1s → 2s → 4s
-      await sleep(1000 * 2 ** attempt);
-      continue;
-    }
-
-    throw toUserFacingGeminiError(status, errorText);
   }
 
-  throw new Error('Gemini 요청이 반복적으로 실패했습니다. 잠시 후 다시 시도해 주세요.');
+  throw toUserFacingGeminiError(lastStatus || 429, lastErrorText);
 }
 
 /**
