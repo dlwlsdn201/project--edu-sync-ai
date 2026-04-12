@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { BookOpen, Plus, TrendingUp, UserCircle } from 'lucide-react-native';
+import { BookOpen, TrendingUp, UserCircle } from 'lucide-react-native';
 
 export default function StudentLayout() {
   return (
@@ -18,13 +18,8 @@ export default function StudentLayout() {
           tabBarIcon: ({ color, size }) => <BookOpen size={size} color={color} />,
         }}
       />
-      <Tabs.Screen
-        name="join"
-        options={{
-          title: '수업 참여',
-          tabBarIcon: ({ color, size }) => <Plus size={size} color={color} />,
-        }}
-      />
+      {/* 구 join 라우트 — 탭에서는 숨기고 퀴즈 탭으로 리다이렉트만 유지 */}
+      <Tabs.Screen name="join" options={{ href: null }} />
       <Tabs.Screen
         name="report"
         options={{
