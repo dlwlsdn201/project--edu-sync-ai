@@ -20,8 +20,8 @@ export default function ReportScreen() {
   const totalAnswered = (conceptStats ?? []).reduce((s, c) => s + c.total, 0);
   const overallAccuracy = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
 
-  const ConceptSection = <ConceptStatsSection stats={conceptStats ?? []} />;
-  const HistorySection = <HistorySection logs={myLogs ?? []} />;
+  const conceptSection = <ConceptStatsSection stats={conceptStats ?? []} />;
+  const historySection = <HistorySection logs={myLogs ?? []} />;
 
   return (
     <ScrollView className="flex-1 bg-gray-50" contentContainerStyle={{ paddingBottom: 32 }}>
@@ -51,13 +51,13 @@ export default function ReportScreen() {
       {/* 태블릿: 2열 / 모바일: 세로 스크롤 */}
       {isTablet ? (
         <View className="flex-row px-4 gap-3">
-          <View className="flex-1">{ConceptSection}</View>
-          <View className="flex-1">{HistorySection}</View>
+          <View className="flex-1">{conceptSection}</View>
+          <View className="flex-1">{historySection}</View>
         </View>
       ) : (
         <View className="px-4 gap-3">
-          {ConceptSection}
-          {HistorySection}
+          {conceptSection}
+          {historySection}
         </View>
       )}
     </ScrollView>
