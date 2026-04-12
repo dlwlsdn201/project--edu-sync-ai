@@ -15,8 +15,9 @@
 - **개념 분석** — 취약/강점 개념 태그 자동 집계
 
 ### 학생
-- **퀴즈 탭** — 상단에서 입장 코드로 수업 참여 후, 같은 화면에서 퀴즈 목록·응시
-- **AI 힌트** — 오답 시 Gemini가 소크라테스식 힌트 제공
+- **퀴즈 탭** — 상단 **입장 코드**로 수업 참여 → 같은 화면 **내 퀴즈**에서 목록 선택·응시(별도 「수업 참여」 탭 없음)
+- **오답 플로우** — **다음 문제**로 바로 진행 가능, 필요 시 **힌트 보기**(Gemini 소크라테스식 힌트)
+- **응시 완료** — 모든 문항 제출 완료 시 목록에서 취소선·비활성 표시, 동일 퀴즈 재응시 불가(리포트·통계 신뢰도)
 - **학습 리포트** — 개념별 정답률 시각화 + 응시 이력
 
 ---
@@ -28,6 +29,7 @@
 | [docs/user-guide.md](docs/user-guide.md) | 사용자 가이드 (탭·플로우) |
 | [docs/demo-guide.md](docs/demo-guide.md) | 웹(Vercel) 데모 시연 스크립트 |
 | [docs/e2e-test-checklist.md](docs/e2e-test-checklist.md) | 수동 E2E 체크리스트 |
+| [docs/sample-quiz-materials.md](docs/sample-quiz-materials.md) | AI 퀴즈 생성 테스트용 붙여넣기 지문 |
 | [NEXT_TO_DO.md](NEXT_TO_DO.md) | 인프라·카카오·Secrets 점검 |
 
 ---
@@ -175,7 +177,8 @@ npx expo run:android
 ├── docs/
 │   ├── user-guide.md           # 사용자 가이드
 │   ├── demo-guide.md           # 웹 데모 시연 가이드
-│   └── e2e-test-checklist.md   # 수동 E2E 테스트 체크리스트
+│   ├── e2e-test-checklist.md   # 수동 E2E 테스트 체크리스트
+│   └── sample-quiz-materials.md # 퀴즈 생성 테스트용 샘플 지문
 │
 ├── eas.json                    # EAS Build 설정
 └── vercel.json                 # Vercel 웹 배포 설정
@@ -229,6 +232,8 @@ classroom_members — 수업-학생 참여 (N:M)
 quiz_sets         — 퀴즈 세트 (classroom_id, title, questions JSONB)
 student_logs      — 응답 기록 (student_id, question_id, is_correct, ai_feedback)
 ```
+
+학생의 **응시 완료** 판정은 `student_logs`에 해당 퀴즈의 모든 `question_id`가 쌓였는지로 계산합니다. 완료된 퀴즈는 앱에서 재응시 UI가 비활성화됩니다.
 
 RLS(Row Level Security) 정책으로 교사는 본인 수업만, 학생은 참여한 수업의 데이터만 접근합니다.
 

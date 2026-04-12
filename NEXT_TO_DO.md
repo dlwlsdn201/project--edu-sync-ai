@@ -67,9 +67,10 @@ npm run build:preview
 ## 완료된 작업 (요약)
 
 - Expo + Supabase + NativeWind, 카카오 Edge Function, DB 스키마
-- 역할 선택, 교사(퀴즈 생성·목록·대시보드), 학생(참여·응시·리포트), Gemini 퀴즈·힌트
-- Supabase Realtime, EAS·Vercel·GitHub Actions, E2E 체크리스트
-- UI 버튼·Auth 스피너·worklets 번들 이슈 등 수정
+- 역할 선택, 교사(퀴즈 생성·목록·대시보드), 학생(응시·리포트), Gemini 퀴즈·힌트
+- **학생 UX**: 퀴즈 탭에 입장 코드·**내 퀴즈** 통합, 참여 성공 인라인 배너, 미참여 시 안내 카드, 오답 시 힌트 선택·**응시 완료** 시 목록 취소선·재응시 차단
+- Supabase Realtime, EAS·Vercel·GitHub Actions, E2E·데모·사용자 가이드
+- Gemini 429/503 대응(폴백 모델·백오프) 등 `src/api/ai.ts` 안정화
 
 ---
 
@@ -86,7 +87,8 @@ npm run build:preview
 | `app/(auth)/role-select.tsx` | 역할 선택 |
 | `app/(teacher)/quiz-create.tsx` | AI 퀴즈 생성 |
 | `app/(teacher)/dashboard.tsx` | 실시간 대시보드 |
-| `app/(student)/quiz.tsx` | 퀴즈 응시 |
+| `app/(student)/quiz-list.tsx` | 입장 코드 + 퀴즈 목록(완료 표시) |
+| `app/(student)/quiz.tsx` | 퀴즈 응시·완료 시 진입 차단 |
 | `app/(student)/report.tsx` | 학습 리포트 |
 | `supabase/functions/kakao-auth/` | 카카오 인증 Edge Function |
 | `eas.json` | EAS Build 설정 |
@@ -94,3 +96,5 @@ npm run build:preview
 | `.github/workflows/deploy-vercel.yml` | CI/CD |
 | `docs/demo-guide.md` | 데모 시연 가이드 |
 | `docs/e2e-test-checklist.md` | E2E 테스트 체크리스트 |
+| `docs/sample-quiz-materials.md` | 퀴즈 생성 테스트용 샘플 지문 |
+| `docs/기획안.md` | 기획 비전·MVP 부록 |
