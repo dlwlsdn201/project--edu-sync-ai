@@ -6,6 +6,10 @@
 
 ---
 
+## 라이브 데모 주소
+
+: https://project-edu-sync-ai.vercel.app
+
 ## 주요 기능
 
 ### 교사
